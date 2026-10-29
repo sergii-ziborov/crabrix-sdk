@@ -14,7 +14,7 @@ an optional companion for iPhone/iPad and offline Rust projects.
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.3.1
+npx -y crabrix@0.3.2
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -49,7 +49,9 @@ try {
 }
 ```
 
-CommonJS: `const { Crabrix } = require('crabrix')`.
+CommonJS: `const { Crabrix } = require('crabrix')`. ESM, CommonJS and
+the programmatic MCP factory share one implementation; mixed imports preserve
+constructor identity and do not load duplicate bundled Yjs copies.
 Use a separate instance per room. `snapshot()` returns validated source plus its
 revision; `status()` returns expiry, participants and selections without the secret
 link or source text. `share('view')` creates no new room: it returns the separate
@@ -60,13 +62,13 @@ cannot invent a view capability, and view access cannot become edit access.
 ## Use through MCP
 
 ```sh
-claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.1
+claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.2
 ```
 
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.1"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.2"] }
   }
 }
 ```
@@ -115,14 +117,14 @@ Cargo/Tokio in the native app remains a separate local project mode.
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.3.1/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.3.2/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.3.1
-cargo install crabrix --version 0.3.1 --locked
+cargo add crabrix@0.3.2
+cargo install crabrix --version 0.3.2 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix

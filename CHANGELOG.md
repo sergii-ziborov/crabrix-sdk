@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 — 29 October 2026
+
+- Share one implementation between ESM, CommonJS and the programmatic MCP
+  factory. Mixed imports previously loaded Yjs twice and produced distinct
+  Crabrix constructors; the new regression checks identity, instanceof and
+  an empty stderr channel in a fresh process.
+- Unify declaration identity for strict mixed-mode TypeScript consumers.
+- Preserve the standalone CLI and exact Rust/Go embedded-core agreement.
+- Extend source manifests to cover public types and the build configuration.
+
 ## 0.3.1 — 29 October 2026
 
 - Correct CLI parsing: `--name --help` and `--name --version` are participant
