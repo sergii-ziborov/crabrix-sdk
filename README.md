@@ -9,6 +9,11 @@ read or change its source and pass its complete link to another agent or person.
 Open the link on the web to see the same live editor. The native Crabrix app is
 an optional companion for iPhone/iPad and offline Rust projects.
 
+See the [practical two-agent walkthrough](https://crabrix.com/blog/crabrix-mcp-two-agents-local-rust-workflows/)
+for development, interviews and teaching, including actual local Run/Debug and
+permission checks. [Release qualification](docs/qualification-0.3.2.json) and
+[public distribution receipts](docs/publication-0.3.2.json) state the tested scope.
+
 ## Install
 
 ```sh
