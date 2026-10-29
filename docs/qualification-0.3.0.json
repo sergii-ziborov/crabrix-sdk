@@ -1,0 +1,38 @@
+{
+  "version": "0.3.0",
+  "jsTests": 22,
+  "typescript": true,
+  "strictESMAndCommonJSConsumerDeclarations": true,
+  "rustUnitTests": 3,
+  "rustDoctests": 1,
+  "rustClippy": "passed with warnings denied",
+  "goRaceTests": 3,
+  "crossLanguage": {
+    "passed": true,
+    "participants": 4,
+    "languages": [
+      "JavaScript",
+      "Rust",
+      "Go"
+    ],
+    "web": true,
+    "sourceEdits": true,
+    "unicode": true,
+    "selections": true,
+    "staleRevisionRejected": true,
+    "errors": []
+  },
+  "browserRuntime": {
+    "passed": true,
+    "localCompiler": true,
+    "noPlaintextSourcePosts": true,
+    "buildMainUntouched": true,
+    "runStdout": true,
+    "debugLocals": true,
+    "stop": true,
+    "errors": []
+  },
+  "npm": "Published; registry verification in progress",
+  "cratesIO": "Package dry-run passed; publication awaits maintainer credential",
+  "go": "Source tested; tagged publication pending"
+}

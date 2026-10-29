@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/sergii-ziborov/crabrix-sdk/go/crabrix"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -21,7 +23,9 @@ func main() {
 			os.Exit(2)
 		}
 	}
-	if err := crabrix.ServeStdio(context.Background()); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	if err := crabrix.ServeStdio(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "Crabrix MCP stopped. Check Node.js 22+ and the client configuration.")
 		os.Exit(1)
 	}

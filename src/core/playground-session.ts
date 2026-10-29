@@ -26,7 +26,7 @@ export function playgroundLink(link: PlaygroundLink, origin = location.origin): 
 export async function createPlayground(doc: Y.Doc, lifetimeSeconds: number): Promise<CreatedPlayground> {
   documentFromY(doc);
   const key = newEncryptionSecret(), snapshot = await encryptPlayground(key, Y.encodeStateAsUpdate(doc));
-  const response = await fetch("/api/playground/rooms/", { method: "POST", credentials: "omit", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ snapshot, lifetimeSeconds }) });
+  const response = await fetch("/api/playground/rooms/", { method: "POST", redirect: "error", credentials: "omit", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ snapshot, lifetimeSeconds }) });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error ?? "Could not create the temporary Playground.");
   return { id: result.id, key, access: result.edit, owner: result.owner, view: result.view, expiresAt: result.expiresAt, mode: "edit" };
@@ -57,7 +57,7 @@ export class PlaygroundSession {
     // obtain this acknowledgement; flipping a view URL's mode cannot prove it.
     const packet = await encryptPlayground(link.key, new Uint8Array([0, 0]));
     if (binding !== this.runtimeBinding() || !this.connected || this.stopped) throw new Error("Runtime connection changed before edit confirmation.");
-    const response = await fetch(this.relayOrigin + "/api/playground/rooms/" + link.id + "/", { method: "POST", headers: { Authorization: "Bearer " + link.access, "Content-Type": "application/json" }, credentials: "omit", cache: "no-store", signal: this.abort.signal,
+    const response = await fetch(this.relayOrigin + "/api/playground/rooms/" + link.id + "/", { method: "POST", redirect: "error", headers: { Authorization: "Bearer " + link.access, "Content-Type": "application/json" }, credentials: "omit", cache: "no-store", signal: this.abort.signal,
       body: JSON.stringify({ type: "update", peer: this.peer, messageID: newEncryptionSecret(), packet }) });
     if (!response.ok) throw new Error("The relay did not confirm edit access. A view link cannot authorize runtime control.");
     const result = await response.json();
@@ -89,7 +89,7 @@ export class PlaygroundSession {
     this.presenceSending = true;
     try {
       const packet = await encryptPlayground(this.link.key, localPresence(this.awareness));
-      await fetch(this.endpoint(), { method: "POST", headers: this.headers(), credentials: "omit", cache: "no-store", signal: this.abort.signal,
+      await fetch(this.endpoint(), { method: "POST", redirect: "error", headers: this.headers(), credentials: "omit", cache: "no-store", signal: this.abort.signal,
         body: JSON.stringify({ type: "presence", peer: this.peer, packet }) });
     } catch { /* The source stream controls reconnection; presence is transient. */ }
     finally { this.presenceSending = false; }
@@ -115,7 +115,7 @@ export class PlaygroundSession {
   }
 
   private async stream() {
-    const response = await fetch(this.endpoint() + "events/?peer=" + this.peer, { headers: this.headers(), signal: this.abort.signal, credentials: "omit", cache: "no-store" });
+    const response = await fetch(this.endpoint() + "events/?peer=" + this.peer, { redirect: "error", headers: this.headers(), signal: this.abort.signal, credentials: "omit", cache: "no-store" });
     if (response.status === 410) { this.expire(); return; }
     if (!response.ok || !response.body) { const error = await response.json(); throw new Error(error.error ?? "Interview connection unavailable."); }
     const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = "";
@@ -200,7 +200,7 @@ export class PlaygroundSession {
       documentFromY(this.doc);
       if (bytes.length > 192 * 1024 - 16) throw new Error("This edit is too large for a live update. Download the project before starting a new session.");
       const packet = await encryptPlayground(this.link.key, bytes);
-      const response = await fetch(this.endpoint(), { method: "POST", headers: this.headers(), credentials: "omit", cache: "no-store", signal: this.abort.signal,
+      const response = await fetch(this.endpoint(), { method: "POST", redirect: "error", headers: this.headers(), credentials: "omit", cache: "no-store", signal: this.abort.signal,
         body: JSON.stringify({ type: "update", peer: this.peer, messageID, packet }) });
       if (response.status === 410) { this.expire(); return; }
       const result = await response.json();
@@ -230,7 +230,7 @@ export class PlaygroundSession {
     try {
       const sequence = this.sequence;
       const packet = await encryptPlayground(this.link.key, Y.encodeStateAsUpdate(this.doc));
-      const response = await fetch(this.endpoint(), { method: "POST", credentials: "omit", cache: "no-store", headers: this.headers(), signal: this.abort.signal,
+      const response = await fetch(this.endpoint(), { method: "POST", redirect: "error", credentials: "omit", cache: "no-store", headers: this.headers(), signal: this.abort.signal,
         body: JSON.stringify({ type: "snapshot", sequence, packet }) });
       if (response.status === 409) this.scheduleSnapshot();
       else if (!response.ok) this.onStatus("Snapshot limit reached. Download a local copy to keep this project.");

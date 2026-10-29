@@ -32017,6 +32017,7 @@ var PlaygroundSession = class {
     if (binding !== this.runtimeBinding() || !this.connected || this.stopped) throw new Error("Runtime connection changed before edit confirmation.");
     const response = await fetch(this.relayOrigin + "/api/playground/rooms/" + link.id + "/", {
       method: "POST",
+      redirect: "error",
       headers: { Authorization: "Bearer " + link.access, "Content-Type": "application/json" },
       credentials: "omit",
       cache: "no-store",
@@ -32064,6 +32065,7 @@ var PlaygroundSession = class {
       const packet = await encryptPlayground(this.link.key, localPresence(this.awareness));
       await fetch(this.endpoint(), {
         method: "POST",
+        redirect: "error",
         headers: this.headers(),
         credentials: "omit",
         cache: "no-store",
@@ -32096,7 +32098,7 @@ var PlaygroundSession = class {
     if (!this.stopped) this.expire();
   }
   async stream() {
-    const response = await fetch(this.endpoint() + "events/?peer=" + this.peer, { headers: this.headers(), signal: this.abort.signal, credentials: "omit", cache: "no-store" });
+    const response = await fetch(this.endpoint() + "events/?peer=" + this.peer, { redirect: "error", headers: this.headers(), signal: this.abort.signal, credentials: "omit", cache: "no-store" });
     if (response.status === 410) {
       this.expire();
       return;
@@ -32199,6 +32201,7 @@ var PlaygroundSession = class {
       const packet = await encryptPlayground(this.link.key, bytes2);
       const response = await fetch(this.endpoint(), {
         method: "POST",
+        redirect: "error",
         headers: this.headers(),
         credentials: "omit",
         cache: "no-store",
@@ -32238,6 +32241,7 @@ var PlaygroundSession = class {
       const packet = await encryptPlayground(this.link.key, encodeStateAsUpdate(this.doc));
       const response = await fetch(this.endpoint(), {
         method: "POST",
+        redirect: "error",
         credentials: "omit",
         cache: "no-store",
         headers: this.headers(),

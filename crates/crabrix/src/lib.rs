@@ -145,7 +145,8 @@ impl Client {
         Self::with_options(Options::default())
     }
     pub fn with_options(options: Options) -> Result<Self> {
-        if options.timeout.is_zero() || options.timeout > Duration::from_secs(120) {
+        if options.timeout < Duration::from_millis(1) || options.timeout > Duration::from_secs(120)
+        {
             return Err(Error(
                 "Choose a transport timeout from 1 ms to 120 seconds.".into(),
             ));
@@ -175,12 +176,12 @@ impl Client {
                     Ok(_) if line.len() <= MAX_LINE => {
                         let value = serde_json::from_slice(&line).map_err(Error::from);
                         let invalid = value.is_err();
-                        if sender.send(value).is_err() || invalid {
+                        if sender.try_send(value).is_err() || invalid {
                             break;
                         }
                     }
                     _ => {
-                        let _ = sender.send(Err(Error(
+                        let _ = sender.try_send(Err(Error(
                             "Crabrix protocol frame exceeds its limit.".into(),
                         )));
                         break;
@@ -394,15 +395,35 @@ fn command(node: &std::path::Path, file: &std::path::Path) -> Command {
 }
 /// Run the exact bundled MCP server over stdio, without an npm download.
 pub fn serve_mcp() -> Result<i32> {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    };
     let directory = tempfile::tempdir()?;
     let file = directory.path().join("bridge.mjs");
     std::fs::write(&file, BRIDGE)?;
-    let status = command(std::path::Path::new("node"), &file)
+    let stopping = Arc::new(AtomicBool::new(false));
+    let signal = stopping.clone();
+    ctrlc::set_handler(move || {
+        signal.store(true, Ordering::SeqCst);
+    })
+    .map_err(|_| Error("Cannot install Crabrix MCP signal handler.".into()))?;
+    let mut child = command(std::path::Path::new("node"), &file)
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
-        .status()?;
-    Ok(status.code().unwrap_or(1))
+        .spawn()?;
+    loop {
+        if stopping.load(Ordering::SeqCst) {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Ok(130);
+        }
+        if let Some(status) = child.try_wait()? {
+            return Ok(status.code().unwrap_or(1));
+        }
+        std::thread::sleep(Duration::from_millis(30));
+    }
 }
 
 #[cfg(test)]

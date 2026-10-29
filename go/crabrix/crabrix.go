@@ -89,6 +89,7 @@ type Client struct {
 	timeout   time.Duration
 	next      uint64
 	closed    bool
+	cancel    context.CancelFunc
 }
 
 func command(ctx context.Context, node, file string) *exec.Cmd {
@@ -135,7 +136,14 @@ func New(ctx context.Context, options Options) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd := command(ctx, options.Node, file)
+	life, cancel := context.WithCancel(ctx)
+	ready := false
+	defer func() {
+		if !ready {
+			cancel()
+		}
+	}()
+	cmd := command(life, options.Node, file)
 	if options.Name == "" {
 		options.Name = "Go agent"
 	}
@@ -157,7 +165,7 @@ func New(ctx context.Context, options Options) (*Client, error) {
 		os.RemoveAll(dir)
 		return nil, errors.New("cannot start Crabrix: install Node.js 22+ or set Options.Node")
 	}
-	c := &Client{cmd: cmd, input: input, replies: make(chan received, 16), done: make(chan struct{}), slots: make(chan struct{}, 32), directory: dir, timeout: options.Timeout, next: 1}
+	c := &Client{cmd: cmd, input: input, replies: make(chan received, 16), done: make(chan struct{}), slots: make(chan struct{}, 32), directory: dir, timeout: options.Timeout, next: 1, cancel: cancel}
 	go c.read(output)
 	if _, err = c.rpc(ctx, "initialize", map[string]any{"protocolVersion": "2025-11-25", "capabilities": map[string]any{}, "clientInfo": map[string]string{"name": "crabrix-go-sdk", "version": "0.3.0"}}); err != nil {
 		c.closeLocked()
@@ -167,6 +175,7 @@ func New(ctx context.Context, options Options) (*Client, error) {
 		c.closeLocked()
 		return nil, err
 	}
+	ready = true
 	return c, nil
 }
 func (c *Client) read(output io.Reader) {
@@ -259,6 +268,9 @@ func (c *Client) Call(ctx context.Context, name string, args any) (json.RawMessa
 	if ctx == nil {
 		return nil, errors.New("a context is required")
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if !tools[name] {
 		return nil, errors.New("unknown Crabrix room tool")
 	}
@@ -270,6 +282,9 @@ func (c *Client) Call(ctx context.Context, name string, args any) (json.RawMessa
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	data, err := c.rpc(ctx, "tools/call", map[string]any{"name": name, "arguments": args})
 	if err != nil {
 		return nil, err
@@ -367,6 +382,9 @@ func (c *Client) closeLocked() {
 		return
 	}
 	c.closed = true
+	if c.cancel != nil {
+		c.cancel()
+	}
 	close(c.done)
 	c.input.Close()
 	if c.cmd.Process != nil {
@@ -375,7 +393,15 @@ func (c *Client) closeLocked() {
 	c.cmd.Wait()
 	os.RemoveAll(c.directory)
 }
-func (c *Client) Close() error { c.mu.Lock(); defer c.mu.Unlock(); c.closeLocked(); return nil }
+func (c *Client) Close() error {
+	if c.cancel != nil {
+		c.cancel()
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.closeLocked()
+	return nil
+}
 
 // ServeStdio launches the bundled MCP server with inherited standard IO.
 func ServeStdio(ctx context.Context) error {
