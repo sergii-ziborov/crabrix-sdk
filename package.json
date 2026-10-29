@@ -1,6 +1,6 @@
 {
   "name": "crabrix",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Encrypted, temporary Rust Playgrounds for agents and people. JavaScript SDK, live handoff and local Run/Debug over MCP.",
   "type": "module",
   "license": "MIT",
@@ -72,6 +72,9 @@
     "claude",
     "sdk",
     "typescript",
-    "end-to-end-encryption"
+    "end-to-end-encryption",
+    "live-coding",
+    "coding-interviews",
+    "rust-learning"
   ]
 }

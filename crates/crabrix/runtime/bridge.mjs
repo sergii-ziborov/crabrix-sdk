@@ -32612,7 +32612,7 @@ var RelayError = class extends Error {
 };
 
 // src/version.ts
-var SDK_VERSION = "0.3.2";
+var SDK_VERSION = "0.3.3";
 
 // src/server.ts
 function makeServer(room = new PlaygroundRoom()) {

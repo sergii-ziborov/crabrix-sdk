@@ -11,15 +11,29 @@ an optional companion for iPhone/iPad and offline Rust projects.
 
 See the [practical two-agent walkthrough](https://crabrix.com/blog/crabrix-mcp-two-agents-local-rust-workflows/)
 for development, interviews and teaching, including actual local Run/Debug and
-permission checks. [Release qualification](docs/qualification-0.3.2.json) and
-[public distribution receipts](docs/publication-0.3.2.json) state the tested scope.
+permission checks. [Release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.3.2.json) and
+[public distribution receipts](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/publication-0.3.2.json) state the tested scope.
+
+<img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/agents-workspace.webp" alt="Orange Crabrix crab between an implementation agent, a review agent and a person at one shared workspace" width="760">
+
+*Illustration of a shared development and review workflow. Real editor captures
+appear below.*
+
+## What can you do with it?
+
+| Workflow | A focused shared workspace |
+| --- | --- |
+| Development | Share a minimal bug reproduction; let another agent review edge cases. |
+| Coding interviews | Discuss a short Rust exercise with live source and named selections. |
+| Teaching | Explain ownership or parsing, run a fixture and inspect concrete values. |
+| Agent handoff | Pass the authorized link, access mode and expiry to the next participant. |
 
 ## Install
 
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.3.2
+npx -y crabrix@0.3.3
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -67,13 +81,13 @@ cannot invent a view capability, and view access cannot become edit access.
 ## Use through MCP
 
 ```sh
-claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.2
+claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.3
 ```
 
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.2"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.3"] }
   }
 }
 ```
@@ -102,6 +116,11 @@ participant's Run only supplies a reported output preview; it never starts your
 compiler. The shared runtime supports standard-library Rust and local modules;
 Cargo/Tokio in the native app remains a separate local project mode.
 
+<img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/local-execution-boundaries.webp" alt="Crabrix permission diagram: an edit link shares source, a human approves one client, and Run or Debug executes locally while results can be shared" width="760">
+
+*Conceptual permission diagram. Browser icons are illustrative; they do not
+certify every browser. A room link alone never grants execution permission.*
+
 ## Temporary sharing, not repository hosting
 
 - Rooms default to one hour, with a maximum of 24 hours and four participants.
@@ -122,14 +141,14 @@ Cargo/Tokio in the native app remains a separate local project mode.
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.3.2/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.3.3/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.3.2
-cargo install crabrix --version 0.3.2 --locked
+cargo add crabrix@0.3.3
+cargo install crabrix --version 0.3.3 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix
@@ -142,7 +161,10 @@ versions have actually been published. See their READMEs for typed usage.
 
 ## See it on your phone or tablet
 
-<p><img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-iphone-selection.png" alt="Crabrix iPhone editor showing an agent selection" width="230"> <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-ipad-local-debug.png" alt="Crabrix iPad with actual locally executing Rust debugger" width="490"></p>
+<p><img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-iphone-selection.png" alt="Native Crabrix iPhone editor with a shared agent selection" width="166" height="360"> <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-ipad-local-debug.png" alt="Native Crabrix iPad inspecting a locally paused Rust program" width="270" height="360"></p>
+
+*Actual application captures from earlier native qualification, displayed at the
+same height. The two-agent test below used two browser clients on one Mac.*
 
 <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/playground-shared-browser.png" alt="Crabrix browser Playground with live shared source and selection" width="760">
 
@@ -174,6 +196,6 @@ npm test
 ```
 
 SDK code and documentation: MIT. Crabrix artwork/screenshots have separate
-[asset terms](ASSETS-LICENSE.md). The app, compiler distributions, brand and Academy
+[asset terms](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/ASSETS-LICENSE.md). The app, compiler distributions, brand and Academy
 retain their own licenses. Bundled dependency licenses are in
-`ThirdPartyNotices.txt`. See [security boundaries](docs/SECURITY.md) before integration.
+`ThirdPartyNotices.txt`. See [security boundaries](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/SECURITY.md) before integration.

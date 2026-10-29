@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.3 — 29 October 2026
+
+- Expand the Rust README to match the JavaScript/MCP overview: workflows, typed
+  examples, client-local Run/Debug, permissions, expiry, limits and honest test scope.
+- Add original Crabrix illustrations, a permissions infographic and documented
+  editor captures; display native screenshots at equal heights.
+- Use explicit documentation/license links that also work on package registries.
+- Keep runtime behavior unchanged; release matching npm, Cargo and Go versions
+  so the registries receive the current packaged documentation.
+
 ## 0.3.2 — 29 October 2026
 
 - Share one implementation between ESM, CommonJS and the programmatic MCP
