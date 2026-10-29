@@ -1,0 +1,23 @@
+[package]
+name = "crabrix"
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Rust SDK and MCP launcher for encrypted temporary Crabrix Playgrounds. Shared protocol core; Node.js 22+ required."
+license = "MIT"
+repository = "https://github.com/sergii-ziborov/crabrix-sdk"
+homepage = "https://crabrix.com/playground/mcp/"
+documentation = "https://docs.rs/crabrix"
+readme = "README.md"
+keywords = ["mcp", "crabrix", "playground", "agents", "collaboration"]
+categories = ["api-bindings", "development-tools"]
+include = ["src/**", "runtime/**", "README.md", "LICENSE", "ASSETS-LICENSE.md", "ThirdPartyNotices.txt", "Cargo.toml"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tempfile = "3.23"
+
+[[bin]]
+name = "crabrix"
+path = "src/main.rs"

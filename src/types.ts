@@ -1,0 +1,12 @@
+export type PlaygroundDocument = { schemaVersion:1; name:string; entryFile:string; files:Record<string,string>; edition:'2021'|'2024'; origin?:{url:string;commit?:string} };
+export type Change = {path:string;text:string|null};
+export type RemoteSelection = {clientID:number;name:string;color:string;file:string;anchor:number;head:number};
+export type Status = {connected:boolean;connection:string;execution:string;room?:string;mode?:'edit'|'view';expiresAt?:string;remainingSeconds?:number;canEndRoom?:boolean;revision?:string;sequence?:number;name?:string;entryFile?:string;edition?:'2021'|'2024';files?:{path:string;bytes:number}[];participants?:{name:string}[];selections?:RemoteSelection[];conditionalEdits?:boolean};
+export type CreatedRoom = Status & {link:string;linkType:string;instructions:string;canEndRoom:true;expiresAt:string;revision:string};
+export type SourceFile = {path:string;text:string;revision:string;contentTrust:string};
+export type Snapshot = {document:PlaygroundDocument;revision:string;contentTrust:string};
+export type ApplyResult = {changed:boolean;revision:string;acknowledgedSequence?:number;files?:string[];note?:string};
+export type Handoff = {schema:string;linkType:string;link:string;expiresAt:string;revision:string;mode:'edit'|'view';execution:string;warning:string};
+export type RuntimeOperation = 'discover'|'grant'|'check'|'build'|'run'|'debug'|'step'|'continue'|'stop'|'status'|'stdout'|'stderr'|'diagnostics'|'locals'|'breakpoints'|'revoke';
+export type RuntimeClients = {controller:string;warnings:string[];source:{revision:string;paths:string[]};clients:{fingerprint:string;revision:string;expires:number;name:string;profile:string;operations:string[];ready:boolean;busy:boolean;permissions:string;editConfirmed:boolean;grant?:{id:string;expires:number;operations:string[]}|null;job?:{id:string;requestID:string;operation:string;state:string}}[];execution:string};
+export type RuntimeResult = Record<string,unknown>;
