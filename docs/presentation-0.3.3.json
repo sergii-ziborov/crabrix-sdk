@@ -103,5 +103,18 @@
     "privateLinkIncluded": false
   },
   "docsRsHTTP200": true,
-  "npmLatest": "0.3.3"
+  "npmLatest": "0.3.3",
+  "npmReadmeURL": "https://www.npmjs.com/package/crabrix/v/0.3.3",
+  "cratesReadmeURL": "https://crates.io/crates/crabrix",
+  "githubReadmeURL": "https://github.com/sergii-ziborov/crabrix-sdk",
+  "npmDefaultPageCache": {
+    "observedVersion": "0.3.2",
+    "registryLatest": "0.3.3",
+    "documentHTTP200": true,
+    "cacheControl": "public, max-age=14400",
+    "ageSecondsAtObservation": 1119,
+    "bypassLocalCacheStillStale": true,
+    "newVersionReadmeVerified": true,
+    "note": "The unversioned npm page had a stale CDN document; the explicit 0.3.3 page rendered the new README and all seven images. No additional version was published to work around the cache."
+  }
 }
