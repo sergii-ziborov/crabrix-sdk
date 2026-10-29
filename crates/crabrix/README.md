@@ -12,9 +12,9 @@ No phone application is required: a browser or another agent can join the room.
 
 ```sh
 # Add the library to a Rust project
-cargo add crabrix@0.3.0
+cargo add crabrix@0.3.1
 # Or install the optional MCP executable
-cargo install crabrix --version 0.3.0 --locked
+cargo install crabrix --version 0.3.1 --locked
 ```
 
 Install Node.js 22+ first. The executable and library run the embedded bridge

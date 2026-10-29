@@ -43,6 +43,19 @@ func TestRedactedHandoff(t *testing.T) {
 		}
 	}
 }
+func TestFlagLikeParticipantNames(t *testing.T) {
+	for _, name := range []string{"--help", "--version"} {
+		c, err := New(context.Background(), Options{Name: name})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = c.Status(context.Background())
+		c.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 func TestOptions(t *testing.T) {
 	if _, err := New(context.Background(), Options{Timeout: -time.Second}); err == nil {
 		t.Fatal("negative timeout accepted")

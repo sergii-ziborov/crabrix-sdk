@@ -441,6 +441,18 @@ mod tests {
         c.close();
         assert!(c.status().is_err());
     }
+
+    #[test]
+    fn flag_like_participant_names_start_the_embedded_server() {
+        for name in ["--help", "--version"] {
+            let mut client = Client::with_options(Options {
+                name: name.into(),
+                ..Options::default()
+            })
+            .unwrap();
+            assert_eq!(client.status().unwrap()["connected"], false);
+        }
+    }
     #[test]
     fn handoff_debug_redacts_capabilities() {
         let h = Handoff {

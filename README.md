@@ -14,7 +14,7 @@ an optional companion for iPhone/iPad and offline Rust projects.
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.3.0
+npx -y crabrix@0.3.1
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -60,13 +60,13 @@ cannot invent a view capability, and view access cannot become edit access.
 ## Use through MCP
 
 ```sh
-claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.0
+claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.1
 ```
 
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.0"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.1"] }
   }
 }
 ```
@@ -115,14 +115,14 @@ Cargo/Tokio in the native app remains a separate local project mode.
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.3.0/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.3.1/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.3.0
-cargo install crabrix --version 0.3.0 --locked
+cargo add crabrix@0.3.1
+cargo install crabrix --version 0.3.1 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix
@@ -141,6 +141,21 @@ versions have actually been published. See their READMEs for typed usage.
 
 These are actual Crabrix application/browser captures. The SDK also works with
 other agents and the web editor when nobody has installed the phone app.
+
+## Two agents, one browser workspace
+
+A real implementation agent and independent review agent shared two Rust files
+with two browser clients. The reviewer added 13 assertions; the browser ran them
+locally and Debug showed a struct containing String and Vec values. The second
+browser received the reported output without preparing or running a compiler.
+Stale replacements, half-surrogate selections and an ungranted agent's attempts
+to Step/Continue/Stop the other agent's job were refused. Revoking the grant
+blocked another start. This is a point-in-time integration check, not a claim
+that untrusted projects or every model/client are universally safe.
+
+[Development, interviews and learning walkthrough](https://crabrix.com/blog/crabrix-mcp-two-agents-local-rust-workflows/)
+
+<img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-two-agents-shared-output.png" alt="Actual browser receiving shared Rust output with no execution on that client" width="760">
 
 ## Development and license
 

@@ -758,8 +758,8 @@ function parsedType(data) {
   }
   return t;
 }
-function issue(...args2) {
-  const [iss, input, inst] = args2;
+function issue(...args3) {
+  const [iss, input, inst] = args3;
   if (typeof iss === "string") {
     return {
       message: iss,
@@ -1067,20 +1067,20 @@ var domain = /^([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 var e164 = /^\+[1-9]\d{6,14}$/;
 var dateSource = `(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))`;
 var date = /* @__PURE__ */ new RegExp(`^${dateSource}$`);
-function timeSource(args2) {
+function timeSource(args3) {
   const hhmm = `(?:[01]\\d|2[0-3]):[0-5]\\d`;
-  const regex = typeof args2.precision === "number" ? args2.precision === -1 ? `${hhmm}` : args2.precision === 0 ? `${hhmm}:[0-5]\\d` : `${hhmm}:[0-5]\\d\\.\\d{${args2.precision}}` : `${hhmm}(?::[0-5]\\d(?:\\.\\d+)?)?`;
+  const regex = typeof args3.precision === "number" ? args3.precision === -1 ? `${hhmm}` : args3.precision === 0 ? `${hhmm}:[0-5]\\d` : `${hhmm}:[0-5]\\d\\.\\d{${args3.precision}}` : `${hhmm}(?::[0-5]\\d(?:\\.\\d+)?)?`;
   return regex;
 }
-function time(args2) {
-  return new RegExp(`^${timeSource(args2)}$`);
+function time(args3) {
+  return new RegExp(`^${timeSource(args3)}$`);
 }
-function datetime(args2) {
-  const time3 = timeSource({ precision: args2.precision });
+function datetime(args3) {
+  const time3 = timeSource({ precision: args3.precision });
   const opts = ["Z"];
-  if (args2.local)
+  if (args3.local)
     opts.push("");
-  if (args2.offset)
+  if (args3.offset)
     opts.push(`([+-](?:[01]\\d|2[0-3]):[0-5]\\d)`);
   const timeRegex = `${time3}(?:${opts.join("|")})`;
   return new RegExp(`^${dateSource}T(?:${timeRegex})$`);
@@ -1670,11 +1670,11 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
 
 // node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/doc.js
 var Doc = class {
-  constructor(args2 = []) {
+  constructor(args3 = []) {
     this.content = [];
     this.indent = 0;
     if (this)
-      this.args = args2;
+      this.args = args3;
   }
   indented(fn) {
     this.indent += 1;
@@ -1697,10 +1697,10 @@ var Doc = class {
   }
   compile() {
     const F = Function;
-    const args2 = this?.args;
+    const args3 = this?.args;
     const content = this?.content ?? [``];
     const lines = [...content.map((x) => `  ${x}`)];
-    return new F(...args2, lines.join("\n"));
+    return new F(...args3, lines.join("\n"));
   }
 };
 
@@ -3561,8 +3561,8 @@ var $ZodFunction = /* @__PURE__ */ $constructor("$ZodFunction", (inst, def) => {
     if (typeof func !== "function") {
       throw new Error("implement() must be called with a function");
     }
-    return function(...args2) {
-      const parsedArgs = inst._def.input ? parse(inst._def.input, args2) : args2;
+    return function(...args3) {
+      const parsedArgs = inst._def.input ? parse(inst._def.input, args3) : args3;
       const result = Reflect.apply(func, this, parsedArgs);
       if (inst._def.output) {
         return parse(inst._def.output, result);
@@ -3574,8 +3574,8 @@ var $ZodFunction = /* @__PURE__ */ $constructor("$ZodFunction", (inst, def) => {
     if (typeof func !== "function") {
       throw new Error("implementAsync() must be called with a function");
     }
-    return async function(...args2) {
-      const parsedArgs = inst._def.input ? await parseAsync(inst._def.input, args2) : args2;
+    return async function(...args3) {
+      const parsedArgs = inst._def.input ? await parseAsync(inst._def.input, args3) : args3;
       const result = await Reflect.apply(func, this, parsedArgs);
       if (inst._def.output) {
         return await parseAsync(inst._def.output, result);
@@ -3601,22 +3601,22 @@ var $ZodFunction = /* @__PURE__ */ $constructor("$ZodFunction", (inst, def) => {
     }
     return payload;
   };
-  inst.input = (...args2) => {
+  inst.input = (...args3) => {
     const F = inst.constructor;
-    if (Array.isArray(args2[0])) {
+    if (Array.isArray(args3[0])) {
       return new F({
         type: "function",
         input: new $ZodTuple({
           type: "tuple",
-          items: args2[0],
-          rest: args2[1]
+          items: args3[0],
+          rest: args3[1]
         }),
         output: inst._def.output
       });
     }
     return new F({
       type: "function",
-      input: args2[0],
+      input: args3[0],
       output: inst._def.output
     });
   };
@@ -5958,12 +5958,12 @@ var ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
     },
     configurable: true
   });
-  inst.meta = (...args2) => {
-    if (args2.length === 0) {
+  inst.meta = (...args3) => {
+    if (args3.length === 0) {
       return globalRegistry.get(inst);
     }
     const cl = inst.clone();
-    globalRegistry.add(cl, args2[0]);
+    globalRegistry.add(cl, args3[0]);
     return cl;
   };
   inst.isOptional = () => inst.safeParse(void 0).success;
@@ -5979,18 +5979,18 @@ var _ZodString = /* @__PURE__ */ $constructor("_ZodString", (inst, def) => {
   inst.format = bag.format ?? null;
   inst.minLength = bag.minimum ?? null;
   inst.maxLength = bag.maximum ?? null;
-  inst.regex = (...args2) => inst.check(_regex(...args2));
-  inst.includes = (...args2) => inst.check(_includes(...args2));
-  inst.startsWith = (...args2) => inst.check(_startsWith(...args2));
-  inst.endsWith = (...args2) => inst.check(_endsWith(...args2));
-  inst.min = (...args2) => inst.check(_minLength(...args2));
-  inst.max = (...args2) => inst.check(_maxLength(...args2));
-  inst.length = (...args2) => inst.check(_length(...args2));
-  inst.nonempty = (...args2) => inst.check(_minLength(1, ...args2));
+  inst.regex = (...args3) => inst.check(_regex(...args3));
+  inst.includes = (...args3) => inst.check(_includes(...args3));
+  inst.startsWith = (...args3) => inst.check(_startsWith(...args3));
+  inst.endsWith = (...args3) => inst.check(_endsWith(...args3));
+  inst.min = (...args3) => inst.check(_minLength(...args3));
+  inst.max = (...args3) => inst.check(_maxLength(...args3));
+  inst.length = (...args3) => inst.check(_length(...args3));
+  inst.nonempty = (...args3) => inst.check(_minLength(1, ...args3));
   inst.lowercase = (params2) => inst.check(_lowercase(params2));
   inst.uppercase = (params2) => inst.check(_uppercase(params2));
   inst.trim = () => inst.check(_trim());
-  inst.normalize = (...args2) => inst.check(_normalize(...args2));
+  inst.normalize = (...args3) => inst.check(_normalize(...args3));
   inst.toLowerCase = () => inst.check(_toLowerCase());
   inst.toUpperCase = () => inst.check(_toUpperCase());
   inst.slugify = () => inst.check(_slugify());
@@ -6410,8 +6410,8 @@ var ZodObject = /* @__PURE__ */ $constructor("ZodObject", (inst, def) => {
   inst.merge = (other) => util_exports.merge(inst, other);
   inst.pick = (mask) => util_exports.pick(inst, mask);
   inst.omit = (mask) => util_exports.omit(inst, mask);
-  inst.partial = (...args2) => util_exports.partial(ZodOptional, inst, args2[0]);
-  inst.required = (...args2) => util_exports.required(ZodNonOptional, inst, args2[0]);
+  inst.partial = (...args3) => util_exports.partial(ZodOptional, inst, args3[0]);
+  inst.required = (...args3) => util_exports.required(ZodNonOptional, inst, args3[0]);
 });
 function object(shape, params2) {
   const def = {
@@ -6548,10 +6548,10 @@ var ZodMap = /* @__PURE__ */ $constructor("ZodMap", (inst, def) => {
   inst._zod.processJSONSchema = (ctx, json2, params2) => mapProcessor(inst, ctx, json2, params2);
   inst.keyType = def.keyType;
   inst.valueType = def.valueType;
-  inst.min = (...args2) => inst.check(_minSize(...args2));
+  inst.min = (...args3) => inst.check(_minSize(...args3));
   inst.nonempty = (params2) => inst.check(_minSize(1, params2));
-  inst.max = (...args2) => inst.check(_maxSize(...args2));
-  inst.size = (...args2) => inst.check(_size(...args2));
+  inst.max = (...args3) => inst.check(_maxSize(...args3));
+  inst.size = (...args3) => inst.check(_size(...args3));
 });
 function map(keyType, valueType, params2) {
   return new ZodMap({
@@ -6565,10 +6565,10 @@ var ZodSet = /* @__PURE__ */ $constructor("ZodSet", (inst, def) => {
   $ZodSet.init(inst, def);
   ZodType.init(inst, def);
   inst._zod.processJSONSchema = (ctx, json2, params2) => setProcessor(inst, ctx, json2, params2);
-  inst.min = (...args2) => inst.check(_minSize(...args2));
+  inst.min = (...args3) => inst.check(_minSize(...args3));
   inst.nonempty = (params2) => inst.check(_minSize(1, params2));
-  inst.max = (...args2) => inst.check(_maxSize(...args2));
-  inst.size = (...args2) => inst.check(_size(...args2));
+  inst.max = (...args3) => inst.check(_maxSize(...args3));
+  inst.size = (...args3) => inst.check(_size(...args3));
 });
 function set(valueType, params2) {
   return new ZodSet({
@@ -6951,11 +6951,11 @@ function _instanceof(cls, params2 = {}) {
   };
   return inst;
 }
-var stringbool = (...args2) => _stringbool({
+var stringbool = (...args3) => _stringbool({
   Codec: ZodCodec,
   Boolean: ZodBoolean,
   String: ZodString
-}, ...args2);
+}, ...args3);
 function json(params2) {
   const jsonSchema = lazy(() => {
     return union([string2(params2), number2(), boolean2(), _null3(), array(jsonSchema), record(string2(), jsonSchema)]);
@@ -12685,23 +12685,23 @@ var require_code$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
   };
   exports._Code = _Code;
   exports.nil = new _Code("");
-  function _(strs, ...args2) {
+  function _(strs, ...args3) {
     const code = [strs[0]];
     let i = 0;
-    while (i < args2.length) {
-      addCodeArg(code, args2[i]);
+    while (i < args3.length) {
+      addCodeArg(code, args3[i]);
       code.push(strs[++i]);
     }
     return new _Code(code);
   }
   exports._ = _;
   const plus = new _Code("+");
-  function str(strs, ...args2) {
+  function str(strs, ...args3) {
     const expr = [safeStringify(strs[0])];
     let i = 0;
-    while (i < args2.length) {
+    while (i < args3.length) {
       expr.push(plus);
-      addCodeArg(expr, args2[i]);
+      addCodeArg(expr, args3[i]);
       expr.push(plus, safeStringify(strs[++i]));
     }
     optimize(expr);
@@ -13246,10 +13246,10 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
     }
   };
   var Func = class extends BlockNode {
-    constructor(name, args2, async) {
+    constructor(name, args3, async) {
       super();
       this.name = name;
-      this.args = args2;
+      this.args = args3;
       this.async = async;
     }
     render(opts) {
@@ -13474,8 +13474,8 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
       this._nodes.length = len;
       return this;
     }
-    func(name, args2 = code_1.nil, async, funcBody) {
-      this._blockNode(new Func(name, args2, async));
+    func(name, args3 = code_1.nil, async, funcBody) {
+      this._blockNode(new Func(name, args3, async));
       if (funcBody) this.code(funcBody).endFunc();
       return this;
     }
@@ -13557,13 +13557,13 @@ var require_codegen = /* @__PURE__ */ __commonJSMin(((exports) => {
   }
   exports.not = not;
   const andCode = mappend(exports.operators.AND);
-  function and(...args2) {
-    return args2.reduce(andCode);
+  function and(...args3) {
+    return args3.reduce(andCode);
   }
   exports.and = and;
   const orCode = mappend(exports.operators.OR);
-  function or(...args2) {
-    return args2.reduce(orCode);
+  function or(...args3) {
+    return args3.reduce(orCode);
   }
   exports.or = or;
   function mappend(op) {
@@ -14193,8 +14193,8 @@ var require_code = /* @__PURE__ */ __commonJSMin(((exports) => {
       [names_1.default.rootData, names_1.default.rootData]
     ];
     if (it.opts.dynamicRef) valCxt.push([names_1.default.dynamicAnchors, names_1.default.dynamicAnchors]);
-    const args2 = (0, codegen_1._)`${dataAndSchema}, ${gen.object(...valCxt)}`;
-    return context !== codegen_1.nil ? (0, codegen_1._)`${func}.call(${context}, ${args2})` : (0, codegen_1._)`${func}(${args2})`;
+    const args3 = (0, codegen_1._)`${dataAndSchema}, ${gen.object(...valCxt)}`;
+    return context !== codegen_1.nil ? (0, codegen_1._)`${func}.call(${context}, ${args3})` : (0, codegen_1._)`${func}(${args3})`;
   }
   exports.callValidateCode = callValidateCode;
   const newRegExp = (0, codegen_1._)`new RegExp`;
@@ -21155,8 +21155,8 @@ var McpServer = class {
       if (!tool) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Tool ${request.params.name} not found`);
       if (!tool.enabled) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Tool ${request.params.name} disabled`);
       try {
-        const args2 = await this.validateToolInput(tool, request.params.arguments, request.params.name);
-        const result = await this.executeToolHandler(tool, args2, ctx);
+        const args3 = await this.validateToolInput(tool, request.params.arguments, request.params.name);
+        const result = await this.executeToolHandler(tool, args3, ctx);
         await this.validateToolOutput(tool, result, request.params.name);
         if (isInputRequiredResult(result)) return result;
         return this.server.projectCallToolResult(result, tool.outputSchemaJson);
@@ -21185,10 +21185,10 @@ var McpServer = class {
   /**
   * Validates tool input arguments against the tool's input schema.
   */
-  async validateToolInput(tool, args2, toolName) {
-    if (this._maxToolInputElements !== void 0 && toolInputElementCount(args2, this._maxToolInputElements) > this._maxToolInputElements) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Invalid arguments for tool ${toolName}: arguments contain more than the maximum of ${this._maxToolInputElements} elements`);
+  async validateToolInput(tool, args3, toolName) {
+    if (this._maxToolInputElements !== void 0 && toolInputElementCount(args3, this._maxToolInputElements) > this._maxToolInputElements) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Invalid arguments for tool ${toolName}: arguments contain more than the maximum of ${this._maxToolInputElements} elements`);
     if (!tool.inputSchema) return;
-    const parseResult = await validateStandardSchema(tool.inputSchema, args2 ?? {});
+    const parseResult = await validateStandardSchema(tool.inputSchema, args3 ?? {});
     if (!parseResult.success) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Input validation error: Invalid arguments for tool ${toolName}: ${parseResult.error}`);
     return parseResult.data;
   }
@@ -21206,8 +21206,8 @@ var McpServer = class {
   /**
   * Executes a tool handler.
   */
-  async executeToolHandler(tool, args2, ctx) {
-    return tool.executor(args2, ctx);
+  async executeToolHandler(tool, args3, ctx) {
+    return tool.executor(args3, ctx);
   }
   _completionHandlerInitialized = false;
   setCompletionRequestHandler() {
@@ -21603,7 +21603,7 @@ var McpServer = class {
 function createToolExecutor(inputSchema, handler) {
   if (inputSchema) {
     const callback$1 = handler;
-    return async (args2, ctx) => callback$1(args2, ctx);
+    return async (args3, ctx) => callback$1(args3, ctx);
   }
   const callback = handler;
   return async (_args, ctx) => callback(ctx);
@@ -21629,8 +21629,8 @@ function convertOutputSchemaJson(outputSchema) {
 function createPromptHandler(name, argsSchema, callback) {
   if (argsSchema) {
     const typedCallback = callback;
-    return async (args2, ctx) => {
-      const parseResult = await validateStandardSchema(argsSchema, args2 ?? {});
+    return async (args3, ctx) => {
+      const parseResult = await validateStandardSchema(argsSchema, args3 ?? {});
       if (!parseResult.success) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Invalid arguments for prompt ${name}: ${parseResult.error}`);
       return typedCallback(parseResult.data, ctx);
     };
@@ -22790,13 +22790,13 @@ var ObservableV2 = class {
    * @param {EVENTS[NAME]} f
    */
   once(name, f) {
-    const _f = (...args2) => {
+    const _f = (...args3) => {
       this.off(
         name,
         /** @type {any} */
         _f
       );
-      f(...args2);
+      f(...args3);
     };
     this.on(
       name,
@@ -22828,8 +22828,8 @@ var ObservableV2 = class {
    * @param {NAME} name The event name.
    * @param {Parameters<EVENTS[NAME]>} args The arguments that are applied to the event listener.
    */
-  emit(name, args2) {
-    return from((this._observers.get(name) || create()).values()).forEach((f) => f(...args2));
+  emit(name, args3) {
+    return from((this._observers.get(name) || create()).values()).forEach((f) => f(...args3));
   }
   destroy() {
     this._observers = create();
@@ -22851,9 +22851,9 @@ var Observable = class {
    * @param {function} f
    */
   once(name, f) {
-    const _f = (...args2) => {
+    const _f = (...args3) => {
       this.off(name, _f);
-      f(...args2);
+      f(...args3);
     };
     this.on(name, _f);
   }
@@ -22879,8 +22879,8 @@ var Observable = class {
    * @param {N} name The event name.
    * @param {Array<any>} args The arguments that are applied to the event listener.
    */
-  emit(name, args2) {
-    return from((this._observers.get(name) || create()).values()).forEach((f) => f(...args2));
+  emit(name, args3) {
+    return from((this._observers.get(name) || create()).values()).forEach((f) => f(...args3));
   }
   destroy() {
     this._observers = create();
@@ -23652,14 +23652,14 @@ var deepFreeze = (o) => {
 };
 
 // node_modules/.pnpm/lib0@0.2.119/node_modules/lib0/function.js
-var callAll = (fs, args2, i = 0) => {
+var callAll = (fs, args3, i = 0) => {
   try {
     for (; i < fs.length; i++) {
-      fs[i](...args2);
+      fs[i](...args3);
     }
   } finally {
     if (i < fs.length) {
-      callAll(fs, args2, i + 1);
+      callAll(fs, args3, i + 1);
     }
   }
 };
@@ -23814,17 +23814,17 @@ var RED = create5();
 var PURPLE = create5();
 var ORANGE = create5();
 var UNCOLOR = create5();
-var computeNoColorLoggingArgs = (args2) => {
-  if (args2.length === 1 && args2[0]?.constructor === Function) {
-    args2 = /** @type {Array<string|Symbol|Object|number>} */
+var computeNoColorLoggingArgs = (args3) => {
+  if (args3.length === 1 && args3[0]?.constructor === Function) {
+    args3 = /** @type {Array<string|Symbol|Object|number>} */
     /** @type {[function]} */
-    args2[0]();
+    args3[0]();
   }
   const strBuilder = [];
   const logArgs = [];
   let i = 0;
-  for (; i < args2.length; i++) {
-    const arg = args2[i];
+  for (; i < args3.length; i++) {
+    const arg = args3[i];
     if (arg === void 0) {
       break;
     } else if (arg.constructor === String || arg.constructor === Number) {
@@ -23836,8 +23836,8 @@ var computeNoColorLoggingArgs = (args2) => {
   if (i > 0) {
     logArgs.push(strBuilder.join(""));
   }
-  for (; i < args2.length; i++) {
-    const arg = args2[i];
+  for (; i < args3.length; i++) {
+    const arg = args3[i];
     if (!(arg instanceof Symbol)) {
       logArgs.push(arg);
     }
@@ -23858,17 +23858,17 @@ var _nodeStyleMap = {
   [ORANGE]: "\x1B[38;5;208m",
   [UNCOLOR]: "\x1B[0m"
 };
-var computeNodeLoggingArgs = (args2) => {
-  if (args2.length === 1 && args2[0]?.constructor === Function) {
-    args2 = /** @type {Array<string|Symbol|Object|number>} */
+var computeNodeLoggingArgs = (args3) => {
+  if (args3.length === 1 && args3[0]?.constructor === Function) {
+    args3 = /** @type {Array<string|Symbol|Object|number>} */
     /** @type {[function]} */
-    args2[0]();
+    args3[0]();
   }
   const strBuilder = [];
   const logArgs = [];
   let i = 0;
-  for (; i < args2.length; i++) {
-    const arg = args2[i];
+  for (; i < args3.length; i++) {
+    const arg = args3[i];
     const style = _nodeStyleMap[arg];
     if (style !== void 0) {
       strBuilder.push(style);
@@ -23886,8 +23886,8 @@ var computeNodeLoggingArgs = (args2) => {
     strBuilder.push("\x1B[0m");
     logArgs.push(strBuilder.join(""));
   }
-  for (; i < args2.length; i++) {
-    const arg = args2[i];
+  for (; i < args3.length; i++) {
+    const arg = args3[i];
     if (!(arg instanceof Symbol)) {
       logArgs.push(arg);
     }
@@ -23895,11 +23895,11 @@ var computeNodeLoggingArgs = (args2) => {
   return logArgs;
 };
 var computeLoggingArgs = supportsColor ? computeNodeLoggingArgs : computeNoColorLoggingArgs;
-var print = (...args2) => {
-  console.log(...computeLoggingArgs(args2));
+var print = (...args3) => {
+  console.log(...computeLoggingArgs(args3));
 };
-var warn = (...args2) => {
-  console.warn(...computeLoggingArgs(args2));
+var warn = (...args3) => {
+  console.warn(...computeLoggingArgs(args3));
 };
 
 // node_modules/.pnpm/lib0@0.2.119/node_modules/lib0/iterator.js
@@ -32611,13 +32611,16 @@ var PlaygroundRoom = class {
 var RelayError = class extends Error {
 };
 
+// src/version.ts
+var SDK_VERSION = "0.3.1";
+
 // src/server.ts
 function makeServer(room = new PlaygroundRoom()) {
   const server = new McpServer(
     {
       name: "crabrix",
       title: "Crabrix",
-      version: "0.3.0",
+      version: SDK_VERSION,
       websiteUrl: "https://crabrix.com/playground/mcp/",
       icons: [{ src: "https://crabrix.com/brand/crabrix-mark.png", mimeType: "image/png" }]
     },
@@ -32636,7 +32639,7 @@ function makeServer(room = new PlaygroundRoom()) {
   const edit = { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true };
   server.registerTool(
     "crabrix_connect",
-    { title: "Connect to Crabrix", description: "Join a user-authorized temporary Playground as Claude \xB7 MCP. The full link grants this MCP host/model access to decrypted source. An edit link allows changes; a view link allows reading only. The phone and browser see this participant.", inputSchema: object({ link: string2().max(1400) }).strict(), annotations: { ...edit, destructiveHint: false } },
+    { title: "Connect to Crabrix", description: "Join a user-authorized temporary Playground as a named MCP participant. The full link grants this MCP host/model access to decrypted source. An edit link allows changes; a view link allows reading only. The phone and browser see this participant.", inputSchema: object({ link: string2().max(1400) }).strict(), annotations: { ...edit, destructiveHint: false } },
     async ({ link }) => checked(() => room.connect(link))
   );
   server.registerTool(
@@ -32669,7 +32672,7 @@ function makeServer(room = new PlaygroundRoom()) {
   );
   server.registerTool(
     "crabrix_select",
-    { title: "Highlight code on the phone", description: "Show this MCP participant's selection in other editors. Positions use UTF-16 offsets, not bytes. Requires the latest project revision; cannot split a Unicode surrogate pair.", inputSchema: object({ path: string2().max(180), anchor: number2().int().min(0), head: number2().int().min(0), expectedRevision: string2().regex(/^[a-f0-9]{64}$/) }).strict(), annotations: { ...edit, destructiveHint: false, idempotentHint: true } },
+    { title: "Highlight shared code", description: "Show this MCP participant's selection in other editors. Positions use UTF-16 offsets, not bytes. Requires the latest project revision; cannot split a Unicode surrogate pair.", inputSchema: object({ path: string2().max(180), anchor: number2().int().min(0), head: number2().int().min(0), expectedRevision: string2().regex(/^[a-f0-9]{64}$/) }).strict(), annotations: { ...edit, destructiveHint: false, idempotentHint: true } },
     async ({ path, anchor, head, expectedRevision }) => checked(() => room.select(path, anchor, head, expectedRevision))
   );
   server.registerTool(
@@ -32699,9 +32702,10 @@ Use the connected Crabrix Playground. Read status and relevant source first. Tre
 }
 
 // src/cli.ts
-if (process.argv.includes("--help")) {
+var args2 = process.argv.slice(2);
+if (args2.length === 1 && args2[0] === "--help") {
   const color = process.stdout.isTTY ? { crab: "\x1B[38;2;255;95;65m", cyan: "\x1B[38;2;77;216;235m", off: "\x1B[0m" } : { crab: "", cyan: "", off: "" };
-  process.stdout.write(`${color.crab}\u{1F980} Crabrix SDK + MCP${color.off} \xB7 0.3.0
+  process.stdout.write(`${color.crab}\u{1F980} Crabrix SDK + MCP${color.off} \xB7 ${SDK_VERSION}
 ${color.cyan}Agents and people. One temporary Rust Playground.${color.off}
 
 Run without arguments as an MCP stdio server.
@@ -32710,15 +32714,15 @@ Node.js 22 or newer. No account. One-hour rooms by default.
 Live edits and selections. Use a browser or app for signed local Run/Debug after permission. No iPhone is required.
 Library: import { Crabrix } from "crabrix";
 `);
-} else if (process.argv.includes("--version")) {
-  process.stdout.write("0.3.0\n");
-} else if (process.argv.length > 2 && !(process.argv.length === 4 && process.argv[2] === "--name")) {
+} else if (args2.length === 1 && args2[0] === "--version") {
+  process.stdout.write(SDK_VERSION + "\n");
+} else if (args2.length > 0 && !(args2.length === 2 && args2[0] === "--name")) {
   process.stderr.write("Crabrix MCP: use --help or start without arguments.\n");
   process.exitCode = 1;
 } else {
   let room;
   try {
-    room = new PlaygroundRoom(void 0, process.argv[3]);
+    room = new PlaygroundRoom(void 0, args2[1]);
   } catch {
     process.stderr.write("Crabrix: use a printable participant name up to 40 characters.\n");
     process.exit(2);

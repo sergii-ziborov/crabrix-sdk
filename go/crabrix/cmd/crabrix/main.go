@@ -10,18 +10,22 @@ import (
 )
 
 func main() {
-	if len(os.Args) > 1 {
+	if len(os.Args) == 2 {
 		switch os.Args[1] {
 		case "--help":
-			fmt.Println("🦀 Crabrix 0.3.0 · Go SDK + MCP launcher\nNode.js 22+ required; no npm installation.\nhttps://crabrix.com/playground/mcp/")
+			fmt.Printf("🦀 Crabrix %s · Go SDK + MCP launcher\nNode.js 22+ required; no npm installation.\nhttps://crabrix.com/playground/mcp/\n", crabrix.Version)
 			return
 		case "--version":
-			fmt.Println("0.3.0")
+			fmt.Println(crabrix.Version)
 			return
 		default:
 			fmt.Fprintln(os.Stderr, "Use --help or start without arguments.")
 			os.Exit(2)
 		}
+	}
+	if len(os.Args) > 1 {
+		fmt.Fprintln(os.Stderr, "Use --help or start without arguments.")
+		os.Exit(2)
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

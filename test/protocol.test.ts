@@ -1,10 +1,41 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, copyFile, rm } from "node:fs/promises";
+import { mkdtemp, copyFile, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { spawnSync } from "node:child_process";
+
+test("CLI version agrees with the package and language bindings embed identical bridge bytes", async () => {
+  const packageInfo = JSON.parse(await readFile("package.json", "utf8"));
+  const version = spawnSync(process.execPath, ["dist/cli.mjs", "--version"], { encoding: "utf8", timeout: 5000 });
+  assert.equal(version.status, 0);
+  assert.equal(version.stdout.trim(), packageInfo.version);
+  const bridge = await readFile("dist/cli.mjs");
+  for (const file of ["crates/crabrix/runtime/bridge.mjs", "go/crabrix/runtime/bridge.mjs"]) assert.deepEqual(await readFile(file), bridge, file);
+});
+
+test("participant names that look like options still start a real MCP server", async () => {
+  for (const name of ["--help", "--version", "Review agent 🦀"]) {
+    const transport = new StdioClientTransport({ command: process.execPath, args: [path.resolve("dist/cli.mjs"), "--name", name], stderr: "pipe" });
+    const client = new Client({ name: "named-participant-regression", version: "1" });
+    try {
+      await client.connect(transport);
+      const result = await client.callTool({ name: "crabrix_status", arguments: {} });
+      assert.equal((result.structuredContent as any).connected, false);
+    } finally { await client.close(); await transport.close(); }
+  }
+});
+
+test("invalid mixed CLI flags fail without writing text into the MCP stdout channel", () => {
+  for (const args of [["--name"], ["--version", "extra"], ["--name", "Alice", "--help"], ["--help", "--version"]]) {
+    const result = spawnSync(process.execPath, [path.resolve("dist/cli.mjs"), ...args], { encoding: "utf8", timeout: 5000 });
+    assert.notEqual(result.status, 0, JSON.stringify(args));
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /Crabrix MCP/);
+  }
+});
 
 test("official MCP client discovers and invokes the isolated bundled stdio executable", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "crabrix-mcp-stdio-"));
