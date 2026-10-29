@@ -3,24 +3,57 @@
 # Crabrix for Rust 🦀
 
 Typed Rust SDK and MCP launcher for temporary encrypted Crabrix Playgrounds.
-**Node.js 22+ is required.** The crate embeds the same audited JavaScript protocol
+**Node.js 22+ is required.** The crate embeds the same tested JavaScript protocol
 core as npm `crabrix`; it does not install npm packages or reimplement encryption.
 The Rust library owns a bounded stdio client; the binary runs that MCP core.
 No phone application is required: a browser or another agent can join the room.
 
+## Install from crates.io
+
 ```sh
-# Registry release pending; from a checked-out SDK repository:
-cargo install --path crates/crabrix
+# Add the library to a Rust project
+cargo add crabrix@0.3.0
+# Or install the optional MCP executable
+cargo install crabrix --version 0.3.0 --locked
 ```
+
+Install Node.js 22+ first. The executable and library run the embedded bridge
+locally; no global npm installation, Crabrix account or phone app is needed.
+
+## Use the Rust library
 
 ```rust,no_run
 use crabrix::{Client, CreateOptions};
-let mut client = Client::new()?;
-let room = client.create(&CreateOptions::new("Rust agent exercise"))?;
-let file = client.read("main.rs")?;
-let handoff = client.share("edit")?; // secret: send only to intended recipient
-# Ok::<(), crabrix::Error>(())
+fn main() -> Result<(), crabrix::Error> {
+    let mut client = Client::new()?;
+    let _room = client.create(&CreateOptions::new("Rust agent exercise"))?;
+    let file = client.read("main.rs")?;
+    assert!(!file.revision.is_empty());
+    let _handoff = client.share("edit")?;
+    // Secret: deliver handoff.link only to an intended recipient.
+    // Drop closes this participant; the shared room keeps its fixed expiry.
+    Ok(())
+}
 ```
+
+## Connect an MCP client
+
+```sh
+claude mcp add --transport stdio crabrix -- crabrix
+```
+
+Or configure a desktop MCP client with `"command": "crabrix"` and `"args": []`.
+Use one of the npm, Rust or Go launchers; they expose the same fourteen tools.
+Another agent can join the full link using `Client::connect`; `snapshot`, `read`,
+`apply`, `select` and `share` expose typed source and handoff operations. Use the
+revision returned by the latest read for conditional edits. The link contains
+a decryption capability: never print it into public logs or commit it to Git.
+
+[Open the web Playground](https://crabrix.com/playground/) ·
+[Setup, security boundaries and agent guide](https://crabrix.com/playground/mcp/) ·
+[Detailed Crabrix user guide](https://crabrix.com/guide/#agent-sdk)
+
+## Local execution and temporary rooms
 
 Run/Debug require explicit permission on one connected browser or app. The relay
 never executes source. The shared runtime is std/local modules, not arbitrary
