@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {Client} from '@modelcontextprotocol/client';
 import {StdioClientTransport} from '@modelcontextprotocol/client/stdio';
 const require=createRequire(import.meta.url);
-const {chromium}=require('/Users/serhiirihgt/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require(process.env.CRABRIX_PLAYWRIGHT_MODULE??'playwright');
 const output=path.resolve('build/browser-runtime');await mkdir(output,{recursive:true});
 const transport=new StdioClientTransport({command:process.execPath,args:[path.resolve('dist/cli.mjs')],stderr:'pipe'});
 const client=new Client({name:'Crabrix actual runtime qualification',version:'1'});

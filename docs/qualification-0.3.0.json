@@ -32,7 +32,16 @@
     "stop": true,
     "errors": []
   },
-  "npm": "Published; registry verification in progress",
+  "npm": "Published and installed from the public registry; tarball SHA256/SHA512 verified",
   "cratesIO": "Package dry-run passed; publication awaits maintainer credential",
-  "go": "Source tested; tagged publication pending"
+  "go": "v0.3.0 module tag resolves; executable installed from the public version reports 0.3.0",
+  "githubCI": {
+    "run": "https://github.com/sergii-ziborov/crabrix-sdk/actions/runs/40899289489",
+    "platforms": [
+      "Linux",
+      "macOS",
+      "Windows"
+    ],
+    "status": "passed"
+  }
 }

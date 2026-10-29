@@ -9,9 +9,8 @@ The Rust library owns a bounded stdio client; the binary runs that MCP core.
 No phone application is required: a browser or another agent can join the room.
 
 ```sh
-cargo add crabrix
-# Optional MCP executable
-cargo install crabrix
+# Registry release pending; from a checked-out SDK repository:
+cargo install --path crates/crabrix
 ```
 
 ```rust,no_run

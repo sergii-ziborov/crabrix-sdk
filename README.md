@@ -114,13 +114,14 @@ Cargo/Tokio in the native app remains a separate local project mode.
 
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
+The Rust registry release is pending; use the source route below meanwhile.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix
-cargo install crabrix
+git clone https://github.com/sergii-ziborov/crabrix-sdk.git
+cargo install --path crabrix-sdk/crates/crabrix
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix
