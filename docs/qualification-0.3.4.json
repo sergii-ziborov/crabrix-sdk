@@ -8,7 +8,7 @@
   "typedClippyAndVet": true,
   "pluginValidateStrict": true,
   "pluginInstalledInIsolatedConfig": true,
-  "transport": "Official MCP client over stdio against https://crabrix.com; the .mcp.json command form pointed at the local package because 0.3.4 was not yet published",
+  "transport": "Official MCP client over stdio against https://crabrix.com, launching the published crabrix@0.3.4 npm package; the plugin was also installed from GitHub in an isolated config and reported Connected",
   "tools": 14,
   "secondMCPProcess": true,
   "browserClients": 2,
@@ -24,15 +24,18 @@
   "debugStructStringVecLocals": true,
   "roomEnded": true,
   "fullRoom": {
-    "relayAnswered409AfterUpdates": 26,
-    "retainedCharacters": 4165779,
+    "relayAnswered409AfterUpdates": 11,
+    "retainedCharacters": 1762686,
+    "websiteOpenedFullRoom": true,
     "mcpJoinedAndCommittedAfterSnapshot": true,
-    "staleRevisionStillRefused": true,
-    "websiteJoinedSameRoom": false,
-    "websiteStatus": "Reconnecting: Oversized interview message. The website and native clients keep a 2,000,000 character stream limit."
+    "staleRevisionStillRefused": true
   },
-  "languageLaunchers": ["Rust", "Go"],
+  "languageLaunchers": [
+    "Rust",
+    "Go"
+  ],
   "crossLanguageParticipants": 4,
   "nativeCaptures": "Crabrix 1.1.4 Debug build on iPhone 17 Pro and iPad Pro 13-inch (M5) simulators, iOS 26.5, production rooms",
-  "limitations": "Claude Code slash commands and the GitHub marketplace path need the published repository; no physical-device benchmark or provider GUI certification; source, comments and output remain untrusted."
+  "limitations": "Claude Code slash commands and the GitHub marketplace path need the published repository; no physical-device benchmark or provider GUI certification; source, comments and output remain untrusted.",
+  "publishedPluginInstalledFromGitHub": true
 }
