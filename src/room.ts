@@ -6,7 +6,7 @@ import { createPresence, remoteSelections } from "./core/playground-presence.js"
 import { Y, documentFromY, updateYDocument, yDocument } from "./core/playground-collab.js";
 import { validatePlaygroundDocument, newPlaygroundDocument, PLAYGROUND_LIMITS, isWellFormedUTF16, type PlaygroundDocument } from "./core/playground-document.js";
 import { base64url, encryptPlayground, decryptPlayground, newEncryptionSecret } from "./core/playground-crypto.js";
-import { parsePlaygroundLink, playgroundLink, PlaygroundSession, type PlaygroundLink } from "./core/playground-session.js";
+import { parsePlaygroundLink, playgroundLink, PlaygroundSession, RELAY_STATE_CHARACTERS, type PlaygroundLink } from "./core/playground-session.js";
 
 const ORIGIN = "https://crabrix.com";
 type Packet = { iv: string; data: string };
@@ -158,7 +158,7 @@ export class PlaygroundRoom {
         } else files[change.path] = change.text;
       }
       const after = validatePlaygroundDocument({ ...before, files, ...(entryFile ? { entryFile } : {}), ...(name ? { name } : {}) });
-      const stateVector = Y.encodeStateVector(candidate);
+      const stateVector = Y.encodeStateVector(candidate), relayed = Y.encodeStateAsUpdate(candidate);
       updateYDocument(candidate, after, "mcp-proposal");
       const delta = Y.encodeStateAsUpdate(candidate, stateVector);
       if (delta.length <= 2) return { changed: false, revision: expectedRevision };
@@ -167,14 +167,26 @@ export class PlaygroundRoom {
       const body = { type: "update", peer: session.peer, messageID, expectedSequence: state.sequence, packet };
       // Identical message ID + ciphertext are safe to retry after a lost HTTP
       // response. The relay deduplicates before checking the base sequence.
-      let result: Record<string, any> | undefined;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try { result = await this.request("POST", body); break; }
-        catch (error) {
-          if (error instanceof RelayError || attempt === 1) throw error;
+      const commit = async () => {
+        for (let attempt = 0; ; attempt++) {
+          try { return await this.request("POST", body); }
+          catch (error) {
+            if (error instanceof RelayError || attempt === 1) throw error;
+          }
         }
+      };
+      let result: Record<string, any>;
+      try { result = await commit(); }
+      catch (error) {
+        if (!(error instanceof RelayError) || error.status !== 409) throw error;
+        // Stale and full rooms both answer 409, but only a full room leaves the sequence
+        // where this edit expected it. A snapshot at that sequence is complete; the relay
+        // refuses it if anyone has appended since.
+        if ((await this.request("GET") as State).sequence !== state.sequence) throw error;
+        await this.request("POST", { type: "snapshot", sequence: state.sequence, packet: await encryptPlayground(session.link.key, relayed) });
+        result = await commit();
       }
-      if (!result || !Number.isSafeInteger(result.sequence)) throw new Error("Commit status unknown. Read the shared room before retrying.");
+      if (!Number.isSafeInteger(result.sequence)) throw new Error("Commit status unknown. Read the shared room before retrying.");
       // This is the server-acknowledged change. Applying with the session as
       // origin avoids a second outgoing update; SSE remains authoritative.
       Y.applyUpdate(this.doc!, delta, session);
@@ -259,16 +271,16 @@ export class PlaygroundRoom {
     }
   }
   private async json(response: Response): Promise<Record<string, any>> {
-    if (Number(response.headers.get("content-length") ?? 0) > 2_000_000 || !response.body) throw new Error("Invalid relay response.");
+    if (Number(response.headers.get("content-length") ?? 0) > RELAY_STATE_CHARACTERS || !response.body) throw new Error("Invalid relay response.");
     const reader = response.body.getReader(); let size = 0; const chunks: Uint8Array[] = [];
     try {
-      while (true) { const { value, done } = await reader.read(); if (done) break; size += value.length; if (size > 2_000_000) throw new Error("Oversized relay response."); chunks.push(value); }
+      while (true) { const { value, done } = await reader.read(); if (done) break; size += value.length; if (size > RELAY_STATE_CHARACTERS) throw new Error("Oversized relay response."); chunks.push(value); }
     } finally { await reader.cancel().catch(() => {}); }
     let value;
     try { value = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { throw new Error("Invalid relay response."); }
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid relay response.");
-    if (!response.ok) throw new RelayError(response.status === 409 ? "Revision or connection conflict. Read the current Playground before retrying." : response.status === 410 ? "This temporary Playground expired or closed." : response.status === 403 ? "This link does not authorize this operation." : "The Playground relay could not complete this operation.");
+    if (!response.ok) throw new RelayError(response.status === 409 ? "Revision conflict, connection conflict or a full room budget; nothing was changed. Read the current Playground before retrying." : response.status === 410 ? "This temporary Playground expired or closed." : response.status === 403 ? "This link does not authorize this operation." : "The Playground relay could not complete this operation.", response.status);
     return value;
   }
 }
-class RelayError extends Error {}
+class RelayError extends Error { constructor(message: string, readonly status?: number) { super(message); } }

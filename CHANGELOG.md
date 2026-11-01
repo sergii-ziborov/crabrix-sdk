@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.4 — 1 November 2026
+
+- Publish a snapshot when the relay answers 409, even with pending edits. The
+  relay now refuses updates once a room holds 1.9 MB (or 12 MiB per creating
+  address) as well as at 256 events, and only a snapshot drains a full room.
+  A forced snapshot is validated first; a new state clears the overdue flag.
+- `apply` and `crabrix_apply_changes` drain a full room and commit once. A stale
+  revision is still refused: only a sequence that did not move can be a full room.
+- A failed runtime edit confirmation in a full room schedules the same drain.
+- Accept a joined room's state up to 4.5 MB, wider than the relay's 2,000,000
+  character message, so a room created under different limits stays readable.
+- Update bundled zod to 4.6.7 for GHSA-mrhx-c7xc-m3w5.
+- Package the SDK as a Claude Code plugin: `.mcp.json`, marketplace manifest and
+  a `crabrix-handoff` skill. npm, Cargo and Go packages are otherwise unchanged.
+- Replace the iPhone, browser and observer captures with current interfaces.
+
 ## 0.3.3 — 29 October 2026
 
 - Expand the Rust README to match the JavaScript/MCP overview: workflows, typed

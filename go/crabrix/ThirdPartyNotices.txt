@@ -520,7 +520,7 @@ SOFTWARE.
 
 
 ========================================================================
-zod@4.3.6 · MIT
+zod@4.6.7 · MIT
 MIT License
 
 Copyright (c) 2025 Colin McDonnell

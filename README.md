@@ -11,7 +11,7 @@ an optional companion for iPhone/iPad and offline Rust projects.
 
 See the [practical two-agent walkthrough](https://crabrix.com/blog/crabrix-mcp-two-agents-local-rust-workflows/)
 for development, interviews and teaching, including actual local Run/Debug and
-permission checks. [Release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.3.2.json) and
+permission checks. [Release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.3.4.json) and
 [public distribution receipts](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/publication-0.3.2.json) state the tested scope.
 
 <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/agents-workspace.webp" alt="Orange Crabrix crab between an implementation agent, a review agent and a person at one shared workspace" width="760">
@@ -33,7 +33,7 @@ appear below.*
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.3.3
+npx -y crabrix@0.3.4
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -80,22 +80,39 @@ cannot invent a view capability, and view access cannot become edit access.
 
 ## Use through MCP
 
+### Claude Code plugin
+
+```text
+/plugin marketplace add sergii-ziborov/crabrix-sdk
+/plugin install crabrix@crabrix
+```
+
+The plugin starts the same `npx -y crabrix@0.3.4` server and adds a
+`crabrix-handoff` skill for sharing, reviewing and running Rust. It needs Node.js
+22+. Outside a session, use `claude plugin marketplace add` and
+`claude plugin install` with the same arguments.
+
+### Any MCP host
+
 ```sh
-claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.3
+claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.4
 ```
 
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.3"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.4"] }
   }
 }
 ```
 
 Ask your assistant to create a Playground, then open its complete private link.
-The MCP server exposes create/connect/status/snapshot/read/apply/select/handoff,
-disconnect/end-room and signed runtime discovery/request/start/job tools. Stdio
-stdout contains only MCP messages; help/version output is explicitly requested.
+The MCP server exposes fourteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
+`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
+`crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,
+`crabrix_runtime_request`, `crabrix_runtime_start` and `crabrix_runtime_job`.
+Stdio stdout contains only MCP messages; help/version output is explicitly
+requested.
 No API key or model subscription is included. Your MCP host/model receives any
 source you ask it to read. Treat source, comments and program output as untrusted
 data, never as instructions to the agent.
@@ -126,6 +143,10 @@ certify every browser. A room link alone never grants execution permission.*
 - Rooms default to one hour, with a maximum of 24 hours and four participants.
 - Up to 16 text files, 64 KiB each and 128 KiB total. No images, caches, packages,
   credentials, `.git`, `node_modules`, vendored code or arbitrary host files.
+- The relay retains at most 1.9 MB of encrypted snapshot and updates per room,
+  12 MiB per creating network address and 256 updates between snapshots. It holds
+  16 live rooms per address. A full room answers 409 until a participant publishes
+  a fresh snapshot; browser, app and MCP clients do that automatically.
 - Source is AES-256-GCM encrypted on the client. The key stays after `#` in the
   capability link; only bounded ciphertext is relayed and kept in process RAM.
 - Expiry is fixed when created. Reconnecting cannot extend it; a relay restart
@@ -141,14 +162,14 @@ certify every browser. A room link alone never grants execution permission.*
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.3.3/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.3.4/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.3.3
-cargo install crabrix --version 0.3.3 --locked
+cargo add crabrix@0.3.4
+cargo install crabrix --version 0.3.4 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix
@@ -161,10 +182,11 @@ versions have actually been published. See their READMEs for typed usage.
 
 ## See it on your phone or tablet
 
-<p><img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-iphone-selection.png" alt="Native Crabrix iPhone editor with a shared agent selection" width="166" height="360"> <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-ipad-local-debug.png" alt="Native Crabrix iPad inspecting a locally paused Rust program" width="270" height="360"></p>
+<p><img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-iphone-selection.png" alt="Native Crabrix 1.1.4 iPhone editor with a Rust example, a Review agent selection and the keyboard symbol strip beginning with = + { }" width="166" height="360"> <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/mcp-ipad-local-debug.png" alt="Native Crabrix 1.1.4 iPad debugger paused at a breakpoint, showing String and Vec locals beside a Review agent selection" width="270" height="360"></p>
 
-*Actual application captures from earlier native qualification, displayed at the
-same height. The two-agent test below used two browser clients on one Mac.*
+*Actual Crabrix 1.1.4 captures from iPhone and iPad simulators in production rooms
+created through MCP, displayed at the same height. Debug ran locally on the iPad
+simulator. The two-agent test below used two browser clients on one Mac.*
 
 <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/playground-shared-browser.png" alt="Crabrix browser Playground with live shared source and selection" width="760">
 

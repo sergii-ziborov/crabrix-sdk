@@ -1,0 +1,13 @@
+{
+  "name": "crabrix",
+  "version": "0.3.4",
+  "description": "Encrypted, temporary Rust Playgrounds for agents and people: shared editing, handoff links and permissioned local Run/Debug over MCP.",
+  "author": {
+    "name": "Sergii Ziborov",
+    "url": "https://crabrix.com/about/"
+  },
+  "homepage": "https://crabrix.com/playground/mcp/",
+  "repository": "https://github.com/sergii-ziborov/crabrix-sdk",
+  "license": "MIT",
+  "keywords": ["rust", "playground", "mcp", "collaboration", "interview"]
+}

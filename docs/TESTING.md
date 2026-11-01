@@ -16,6 +16,10 @@ CI runs the local checks on Linux, macOS and Windows. Source changes do not
 publish new registry versions automatically; qualify a real change and use an
 immutable release version. A published Go submodule needs its own prefixed tag.
 
+The Claude Code plugin manifests must stay valid:
+`claude plugin validate . --strict`. The plugin starts the published npm version
+named in `.mcp.json`, so publish npm before announcing a plugin version.
+
 Optional production integration probes create short-lived rooms and end them.
 Install Playwright separately for these development probes (it is not an SDK
 runtime dependency), or set `CRABRIX_PLAYWRIGHT_MODULE` to a trusted installed

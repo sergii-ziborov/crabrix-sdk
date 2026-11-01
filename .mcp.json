@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "crabrix": {
+      "command": "npx",
+      "args": ["-y", "crabrix@0.3.4"]
+    }
+  }
+}

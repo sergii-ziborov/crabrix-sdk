@@ -7,6 +7,11 @@ type EncryptedPacket = { iv: string; data: string };
 
 export type PlaygroundLink = { id: string; key: string; access: string; expiresAt: number; mode: "edit" | "view" };
 export type CreatedPlayground = PlaygroundLink & { owner: string; view: string };
+// Conflict, rate limit and busy relay: the next timed snapshot succeeds and no source is at risk.
+const isTransientSnapshotStatus = (status: number) => status === 409 || status === 429 || status === 503;
+// Deliberately wider than the relay's 2,000,000 character message, so a room created
+// under different limits stays readable and can be drained.
+export const RELAY_STATE_CHARACTERS = 4_500_000;
 type State = { expiresAt: number; sequence: number; snapshotSequence: number; snapshot: EncryptedPacket; events: { sequence: number; packet: EncryptedPacket }[]; presence?: { packet: EncryptedPacket }[] };
 
 export function parsePlaygroundLink(url: URL): PlaygroundLink | null {
@@ -36,7 +41,7 @@ export class PlaygroundSession {
   doc: Y.Doc; link: PlaygroundLink;
   peer = base64url(crypto.getRandomValues(new Uint8Array(16)));
   abort = new AbortController(); sequence = 0; pending: Uint8Array[] = [];
-  sending = false; stopped = false; connected = false; receivedState = false;
+  sending = false; stopped = false; connected = false; receivedState = false; snapshotOverdue = false;
   flushTimer?: ReturnType<typeof setTimeout>; snapshotTimer?: ReturnType<typeof setTimeout>;
   onStatus: (status: string) => void;
   onExpiry: () => void;
@@ -59,6 +64,8 @@ export class PlaygroundSession {
     if (binding !== this.runtimeBinding() || !this.connected || this.stopped) throw new Error("Runtime connection changed before edit confirmation.");
     const response = await fetch(this.relayOrigin + "/api/playground/rooms/" + link.id + "/", { method: "POST", redirect: "error", headers: { Authorization: "Bearer " + link.access, "Content-Type": "application/json" }, credentials: "omit", cache: "no-store", signal: this.abort.signal,
       body: JSON.stringify({ type: "update", peer: this.peer, messageID: newEncryptionSecret(), packet }) });
+    // A full room only drains through a snapshot, so a later attempt can still succeed.
+    if (response.status === 409) { this.snapshotOverdue = true; this.scheduleSnapshot(); }
     if (!response.ok) throw new Error("The relay did not confirm edit access. A view link cannot authorize runtime control.");
     const result = await response.json();
     if (!Number.isSafeInteger(result.sequence) || result.sequence < 1 || binding !== this.runtimeBinding() || !this.connected || this.stopped || this.link.expiresAt <= Date.now()) throw new Error("Runtime connection changed during edit confirmation.");
@@ -123,7 +130,7 @@ export class PlaygroundSession {
       while (!this.stopped) {
         const { done, value } = await reader.read(); if (done) return;
         buffer += decoder.decode(value, { stream: true });
-        if (buffer.length > 2_000_000) throw new Error("Oversized interview message.");
+        if (buffer.length > RELAY_STATE_CHARACTERS) throw new Error("Oversized interview message.");
         let end: number;
         while ((end = buffer.indexOf("\n\n")) >= 0) {
           const block = buffer.slice(0, end); buffer = buffer.slice(end + 2);
@@ -163,7 +170,7 @@ export class PlaygroundSession {
       this.sequence = state.sequence;
     } finally { candidate.destroy(); }
     if (this.awareness) for (const item of state.presence ?? []) await this.receiveParticipant(item.packet);
-    this.receivedState = true; this.connected = true;
+    this.receivedState = true; this.connected = true; this.snapshotOverdue = false;
     void this.sendPresence();
     this.onStatus(this.link.mode === "view" ? "Connected · view only · end-to-end encrypted" : "Connected · shared editor · end-to-end encrypted");
     await this.flush();
@@ -204,6 +211,8 @@ export class PlaygroundSession {
         body: JSON.stringify({ type: "update", peer: this.peer, messageID, packet }) });
       if (response.status === 410) { this.expire(); return; }
       const result = await response.json();
+      // A full room only drains through a snapshot, which normally waits for pending edits.
+      if (response.status === 409) { this.snapshotOverdue = true; this.scheduleSnapshot(); }
       if (!response.ok) throw new Error(result.error ?? "Changes were not relayed.");
       this.scheduleSnapshot();
     } catch (error) {
@@ -226,14 +235,17 @@ export class PlaygroundSession {
   }
 
   private async snapshot() {
-    if (!this.connected || this.pending.length || this.stopped) return;
+    if (!this.connected || (this.pending.length && !this.snapshotOverdue) || this.stopped) return;
     try {
+      // A forced snapshot may include local edits that no relay has accepted yet.
+      documentFromY(this.doc);
       const sequence = this.sequence;
       const packet = await encryptPlayground(this.link.key, Y.encodeStateAsUpdate(this.doc));
       const response = await fetch(this.endpoint(), { method: "POST", redirect: "error", credentials: "omit", cache: "no-store", headers: this.headers(), signal: this.abort.signal,
         body: JSON.stringify({ type: "snapshot", sequence, packet }) });
-      if (response.status === 409) this.scheduleSnapshot();
-      else if (!response.ok) this.onStatus("Snapshot limit reached. Download a local copy to keep this project.");
+      if (response.ok) this.snapshotOverdue = false;
+      else if (isTransientSnapshotStatus(response.status)) this.scheduleSnapshot();
+      else if (response.status !== 410) this.onStatus("Snapshot limit reached. Download a local copy to keep this project.");
     } catch { /* Source remains in the editor; stream reconnection reports connectivity. */ }
   }
 

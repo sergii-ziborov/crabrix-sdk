@@ -1,0 +1,15 @@
+{
+  "name": "crabrix",
+  "owner": {
+    "name": "Sergii Ziborov",
+    "url": "https://crabrix.com/about/"
+  },
+  "description": "Crabrix tools for shared Rust work between agents and people.",
+  "plugins": [
+    {
+      "name": "crabrix",
+      "source": "./",
+      "description": "Encrypted, temporary Rust Playgrounds for agents and people: shared editing, handoff links and permissioned local Run/Debug over MCP."
+    }
+  ]
+}
