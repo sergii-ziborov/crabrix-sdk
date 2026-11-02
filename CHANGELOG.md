@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.5 — unreleased
+## 0.3.5 — 2026-11-02
 
 - Conditional edits also check the relay's state generation when it declares one,
   so a snapshot that replaced the source refuses a commit prepared before it. A
