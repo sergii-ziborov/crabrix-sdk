@@ -1,0 +1,23 @@
+{
+  "version": "0.3.5",
+  "date": "2026-11-02",
+  "jsTests": 47,
+  "rustUnitTests": 4,
+  "rustDoctests": 1,
+  "goRaceTests": "passed",
+  "typedClippyAndVet": true,
+  "pluginValidateStrict": true,
+  "transport": "SDK room class from the tagged source against https://crabrix.com, and the published crabrix@0.3.5 package for doctor",
+  "tools": 16,
+  "doctorAgainstProduction": true,
+  "editionOnCreate": true,
+  "stateGenerationDeclaredByRelay": true,
+  "viewAccessKeptAfterReconnect": true,
+  "staleRevisionRefused": "REVISION_CONFLICT",
+  "failedSwitchKeepsCurrentRoom": true,
+  "secondMCPProcess": false,
+  "browserClients": 0,
+  "physicalDevicesTested": false,
+  "runtimeGrantedInBrowser": false,
+  "notRunForThisRelease": "Official MCP client over stdio with an installed plugin, runtime execution through a browser or app, and the Rust and Go bindings against production. Their local suites passed."
+}
