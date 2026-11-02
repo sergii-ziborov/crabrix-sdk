@@ -16,6 +16,12 @@ CI runs the local checks on Linux, macOS and Windows. Source changes do not
 publish new registry versions automatically; qualify a real change and use an
 immutable release version. A published Go submodule needs its own prefixed tag.
 
+`package.json` is the one version source: `npm run build` regenerates `.mcp.json`,
+the plugin version, `server.json`, `go/crabrix/version.go`, `docs/protocol-core.json`
+and `docs/release-manifest.json`, and fails if `src/version.ts` or Cargo disagree.
+`docs/release-manifest.json` states what this source would release; registry
+availability still needs its own publication receipt.
+
 The Claude Code plugin manifests must stay valid:
 `claude plugin validate . --strict`. The plugin starts the published npm version
 named in `.mcp.json`, so publish npm before announcing a plugin version.

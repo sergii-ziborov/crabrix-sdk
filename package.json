@@ -1,6 +1,7 @@
 {
   "name": "crabrix",
-  "version": "0.3.4",
+  "mcpName": "io.github.sergii-ziborov/crabrix",
+  "version": "0.3.5",
   "description": "Encrypted, temporary Rust Playgrounds for agents and people. JavaScript SDK, live handoff and local Run/Debug over MCP.",
   "type": "module",
   "license": "MIT",
@@ -54,7 +55,7 @@
     "y-protocols": "1.0.7",
     "zod": "4.6.7"
   },
-  "homepage": "https://crabrix.com/playground/mcp/",
+  "homepage": "https://crabrix.com/ai/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sergii-ziborov/crabrix-sdk.git"

@@ -34,6 +34,7 @@ type CreateOptions struct {
 	Files           map[string]string `json:"files,omitempty"`
 	EntryFile       string            `json:"entryFile,omitempty"`
 	LifetimeMinutes int               `json:"lifetimeMinutes,omitempty"`
+	Edition         string            `json:"edition,omitempty"`
 }
 type Change struct {
 	Path string  `json:"path"`
@@ -44,7 +45,18 @@ type ApplyOptions struct {
 	Changes          []Change `json:"changes"`
 	EntryFile        string   `json:"entryFile,omitempty"`
 	Name             string   `json:"name,omitempty"`
+	Edition          string   `json:"edition,omitempty"`
 }
+
+// ToolError is a refused tool call. Code is the bridge's stable reason, such as
+// REVISION_CONFLICT, and is empty when it gave none.
+type ToolError struct {
+	Code    string
+	Message string
+}
+
+func (e *ToolError) Error() string { return e.Message }
+
 type SourceFile struct {
 	Path     string `json:"path"`
 	Text     string `json:"text"`
@@ -261,7 +273,7 @@ func (c *Client) rpc(ctx context.Context, method string, params any) (json.RawMe
 	return nil, errors.New("too many Crabrix protocol notifications")
 }
 
-var tools = map[string]bool{"crabrix_create": true, "crabrix_connect": true, "crabrix_status": true, "crabrix_snapshot": true, "crabrix_read_file": true, "crabrix_apply_changes": true, "crabrix_select": true, "crabrix_handoff": true, "crabrix_disconnect": true, "crabrix_end_room": true, "crabrix_runtime_clients": true, "crabrix_runtime_request": true, "crabrix_runtime_start": true, "crabrix_runtime_job": true}
+var tools = map[string]bool{"crabrix_create": true, "crabrix_connect": true, "crabrix_status": true, "crabrix_snapshot": true, "crabrix_read_file": true, "crabrix_apply_changes": true, "crabrix_select": true, "crabrix_handoff": true, "crabrix_disconnect": true, "crabrix_end_room": true, "crabrix_runtime_clients": true, "crabrix_runtime_request": true, "crabrix_runtime_start": true, "crabrix_runtime_job": true, "crabrix_runtime_inspect": true, "crabrix_runtime_control": true}
 
 // Call invokes one allowlisted room tool. Source and output remain untrusted data.
 func (c *Client) Call(ctx context.Context, name string, args any) (json.RawMessage, error) {
@@ -307,7 +319,13 @@ func (c *Client) Call(ctx context.Context, name string, args any) (json.RawMessa
 		if len(message) > 400 {
 			message = message[:400]
 		}
-		return nil, errors.New(message)
+		var refused struct {
+			Error struct {
+				Code string `json:"code"`
+			} `json:"error"`
+		}
+		_ = json.Unmarshal(result.Structured, &refused)
+		return nil, &ToolError{Code: refused.Error.Code, Message: message}
 	}
 	if len(result.Structured) > 0 {
 		return result.Structured, nil
@@ -361,6 +379,20 @@ func (c *Client) Start(ctx context.Context, target, operation, revision string) 
 	return c.Call(ctx, "crabrix_runtime_start", map[string]any{"target": target, "operation": operation, "sourceRevision": revision})
 }
 func (c *Client) Job(ctx context.Context, target, revision, job, operation string, options map[string]any) (json.RawMessage, error) {
+	return c.jobTool(ctx, "crabrix_runtime_job", target, revision, job, operation, options)
+}
+
+// Inspect reads a job's status or output without changing it.
+func (c *Client) Inspect(ctx context.Context, target, revision, job, operation string, options map[string]any) (json.RawMessage, error) {
+	return c.jobTool(ctx, "crabrix_runtime_inspect", target, revision, job, operation, options)
+}
+
+// Control stops or steps a job this controller owns.
+func (c *Client) Control(ctx context.Context, target, revision, job, operation string, options map[string]any) (json.RawMessage, error) {
+	return c.jobTool(ctx, "crabrix_runtime_control", target, revision, job, operation, options)
+}
+
+func (c *Client) jobTool(ctx context.Context, tool, target, revision, job, operation string, options map[string]any) (json.RawMessage, error) {
 	args := map[string]any{}
 	for k, v := range options {
 		args[k] = v
@@ -369,7 +401,7 @@ func (c *Client) Job(ctx context.Context, target, revision, job, operation strin
 	args["sourceRevision"] = revision
 	args["job"] = job
 	args["operation"] = operation
-	return c.Call(ctx, "crabrix_runtime_job", args)
+	return c.Call(ctx, tool, args)
 }
 func (c *Client) EndRoom(ctx context.Context) (json.RawMessage, error) {
 	return c.Call(ctx, "crabrix_end_room", map[string]any{})
@@ -401,6 +433,23 @@ func (c *Client) Close() error {
 	defer c.mu.Unlock()
 	c.closeLocked()
 	return nil
+}
+
+// Doctor runs the bundled diagnostics. It opens no room and reads no source.
+func Doctor(ctx context.Context, jsonOutput bool) error {
+	dir, file, err := prepare()
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	cmd := command(ctx, "node", file)
+	cmd.Args = append(cmd.Args, "doctor")
+	if jsonOutput {
+		cmd.Args = append(cmd.Args, "--json")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // ServeStdio launches the bundled MCP server with inherited standard IO.

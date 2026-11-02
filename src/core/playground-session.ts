@@ -50,6 +50,8 @@ export class PlaygroundSession {
   private runtimeConnection = 0;
   private confirmedRuntimeBinding = "";
   onRuntimeReset?: () => void;
+  // The latest join or stream failure, so a caller can report its actual cause.
+  lastFailure?: unknown;
 
   private runtimeBinding() { return JSON.stringify([this.runtimeConnection, this.relayOrigin, this.link.id, this.link.key, this.link.access, this.link.expiresAt, this.link.mode]); }
   private resetRuntime() { this.runtimeConnection++; this.confirmedRuntimeBinding = ""; this.onRuntimeReset?.(); }
@@ -112,6 +114,7 @@ export class PlaygroundSession {
       } catch (error) {
         if (this.stopped) return;
         this.connected = false;
+        this.lastFailure = error;
         this.onStatus("Reconnecting — your local changes are retained. " + (error instanceof Error ? error.message : ""));
       }
       this.resetRuntime();
@@ -123,8 +126,8 @@ export class PlaygroundSession {
 
   private async stream() {
     const response = await fetch(this.endpoint() + "events/?peer=" + this.peer, { redirect: "error", headers: this.headers(), signal: this.abort.signal, credentials: "omit", cache: "no-store" });
-    if (response.status === 410) { this.expire(); return; }
-    if (!response.ok || !response.body) { const error = await response.json(); throw new Error(error.error ?? "Interview connection unavailable."); }
+    if (response.status === 410) { this.lastFailure = Object.assign(new Error("expired"), { status: 410 }); this.expire(); return; }
+    if (!response.ok || !response.body) { const error = await response.json().catch(() => ({})); throw Object.assign(new Error(error.error ?? "Interview connection unavailable."), { status: response.status }); }
     const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = "";
     try {
       while (!this.stopped) {

@@ -32,7 +32,13 @@ const BRIDGE: &str = include_str!("../runtime/bridge.mjs");
 const MAX_LINE: usize = 2_000_000;
 
 #[derive(Debug)]
-pub struct Error(String);
+pub struct Error(String, Option<String>);
+impl Error {
+    /// The bridge's stable reason, such as `REVISION_CONFLICT`, when it gave one.
+    pub fn code(&self) -> Option<&str> {
+        self.1.as_deref()
+    }
+}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
@@ -41,12 +47,15 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 impl From<std::io::Error> for Error {
     fn from(_: std::io::Error) -> Self {
-        Self("Crabrix local transport failed; no private source or link was logged.".into())
+        Self(
+            "Crabrix local transport failed; no private source or link was logged.".into(),
+            None,
+        )
     }
 }
 impl From<serde_json::Error> for Error {
     fn from(_: serde_json::Error) -> Self {
-        Self("Invalid Crabrix protocol JSON.".into())
+        Self("Invalid Crabrix protocol JSON.".into(), None)
     }
 }
 pub type Result<T> = std::result::Result<T, Error>;
@@ -149,17 +158,18 @@ impl Client {
         {
             return Err(Error(
                 "Choose a transport timeout from 1 ms to 120 seconds.".into(),
+                None,
             ));
         }
         let directory = tempfile::tempdir()?;
         let file = directory.path().join("bridge.mjs");
         std::fs::write(&file, BRIDGE)?;
-        let mut child=command(&options.node,&file).arg("--name").arg(&options.name).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().map_err(|_|Error("Cannot start Crabrix. Install Node.js 22+ or set Options.node to its trusted executable.".into()))?;
+        let mut child=command(&options.node,&file).arg("--name").arg(&options.name).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().map_err(|_|Error("Cannot start Crabrix. Install Node.js 22+ or set Options.node to its trusted executable.".into(), None))?;
         let input = child.stdin.take();
         let output = child
             .stdout
             .take()
-            .ok_or_else(|| Error("Cannot open Crabrix output.".into()))?;
+            .ok_or_else(|| Error("Cannot open Crabrix output.".into(), None))?;
         // A bounded queue and bounded lines prevent an unresponsive consumer from
         // accumulating notifications or plaintext source without limit.
         let (sender, replies) = mpsc::sync_channel(16);
@@ -183,6 +193,7 @@ impl Client {
                     _ => {
                         let _ = sender.try_send(Err(Error(
                             "Crabrix protocol frame exceeds its limit.".into(),
+                            None,
                         )));
                         break;
                     }
@@ -204,17 +215,17 @@ impl Client {
     }
     fn send(&mut self, value: &Value) -> Result<()> {
         if self.closed {
-            return Err(Error("This Crabrix client is closed.".into()));
+            return Err(Error("This Crabrix client is closed.".into(), None));
         }
         let mut bytes = serde_json::to_vec(value)?;
         if bytes.len() > MAX_LINE {
-            return Err(Error("Crabrix request exceeds its limit.".into()));
+            return Err(Error("Crabrix request exceeds its limit.".into(), None));
         }
         bytes.push(b'\n');
         let input = self
             .input
             .as_mut()
-            .ok_or_else(|| Error("Crabrix input is closed.".into()))?;
+            .ok_or_else(|| Error("Crabrix input is closed.".into(), None))?;
         input.write_all(&bytes)?;
         input.flush()?;
         Ok(())
@@ -240,18 +251,18 @@ impl Client {
             }
             if value.get("jsonrpc").and_then(Value::as_str) != Some("2.0") {
                 self.close();
-                return Err(Error("Invalid Crabrix RPC response.".into()));
+                return Err(Error("Invalid Crabrix RPC response.".into(), None));
             }
             if value.get("error").is_some() {
-                return Err(Error("Crabrix rejected the protocol request.".into()));
+                return Err(Error("Crabrix rejected the protocol request.".into(), None));
             }
             return value
                 .get("result")
                 .cloned()
-                .ok_or_else(|| Error("Missing Crabrix RPC result.".into()));
+                .ok_or_else(|| Error("Missing Crabrix RPC result.".into(), None));
         }
         self.close();
-        Err(Error("Crabrix request timed out or disconnected. Its outcome may be unknown; reconcile before retrying an edit or execution.".into()))
+        Err(Error("Crabrix request timed out or disconnected. Its outcome may be unknown; reconcile before retrying an edit or execution.".into(), None))
     }
     /// Calls one allowlisted room tool; no arbitrary shell command exists.
     pub fn call(&mut self, name: &str, arguments: Value) -> Result<Value> {
@@ -270,9 +281,11 @@ impl Client {
             "crabrix_runtime_request",
             "crabrix_runtime_start",
             "crabrix_runtime_job",
+            "crabrix_runtime_inspect",
+            "crabrix_runtime_control",
         ];
         if !TOOLS.contains(&name) {
-            return Err(Error("Unknown Crabrix room tool.".into()));
+            return Err(Error("Unknown Crabrix room tool.".into(), None));
         }
         let result = self.rpc("tools/call", json!({"name":name,"arguments":arguments}))?;
         if result.get("isError") == Some(&Value::Bool(true)) {
@@ -280,7 +293,11 @@ impl Client {
                 .pointer("/content/0/text")
                 .and_then(Value::as_str)
                 .unwrap_or("Crabrix operation failed.");
-            return Err(Error(message.chars().take(400).collect()));
+            let code = result
+                .pointer("/structuredContent/error/code")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            return Err(Error(message.chars().take(400).collect(), code));
         }
         if let Some(value) = result.get("structuredContent") {
             return Ok(value.clone());
@@ -288,11 +305,17 @@ impl Client {
         let text = result
             .pointer("/content/0/text")
             .and_then(Value::as_str)
-            .ok_or_else(|| Error("Missing Crabrix tool result.".into()))?;
+            .ok_or_else(|| Error("Missing Crabrix tool result.".into(), None))?;
         Ok(serde_json::from_str(text)?)
     }
     pub fn create(&mut self, options: &CreateOptions) -> Result<Value> {
         self.call("crabrix_create", serde_json::to_value(options)?)
+    }
+    /// Like `create`, with Rust edition `2021` or `2024`.
+    pub fn create_with_edition(&mut self, options: &CreateOptions, edition: &str) -> Result<Value> {
+        let mut args = serde_json::to_value(options)?;
+        args["edition"] = json!(edition);
+        self.call("crabrix_create", args)
     }
     pub fn connect(&mut self, link: &str) -> Result<Value> {
         self.call("crabrix_connect", json!({"link":link}))
@@ -310,6 +333,12 @@ impl Client {
     }
     pub fn apply(&mut self, options: &ApplyOptions) -> Result<Value> {
         self.call("crabrix_apply_changes", serde_json::to_value(options)?)
+    }
+    /// Like `apply`, also setting Rust edition `2021` or `2024`. This changes the revision.
+    pub fn apply_with_edition(&mut self, options: &ApplyOptions, edition: &str) -> Result<Value> {
+        let mut args = serde_json::to_value(options)?;
+        args["edition"] = json!(edition);
+        self.call("crabrix_apply_changes", args)
     }
     pub fn select(
         &mut self,
@@ -351,10 +380,28 @@ impl Client {
         operation: &str,
         options: Value,
     ) -> Result<Value> {
+        self.job_tool(
+            "crabrix_runtime_job",
+            target,
+            source_revision,
+            job,
+            operation,
+            options,
+        )
+    }
+    fn job_tool(
+        &mut self,
+        tool: &str,
+        target: &str,
+        source_revision: &str,
+        job: &str,
+        operation: &str,
+        options: Value,
+    ) -> Result<Value> {
         let mut args = options
             .as_object()
             .cloned()
-            .ok_or_else(|| Error("Job options must be an object.".into()))?;
+            .ok_or_else(|| Error("Job options must be an object.".into(), None))?;
         for (k, v) in [
             ("target", target),
             ("sourceRevision", source_revision),
@@ -363,7 +410,43 @@ impl Client {
         ] {
             args.insert(k.into(), Value::String(v.into()));
         }
-        self.call("crabrix_runtime_job", Value::Object(args))
+        self.call(tool, Value::Object(args))
+    }
+    /// Reads a job's status or output without changing it.
+    pub fn inspect(
+        &mut self,
+        target: &str,
+        source_revision: &str,
+        job: &str,
+        operation: &str,
+        options: Value,
+    ) -> Result<Value> {
+        self.job_tool(
+            "crabrix_runtime_inspect",
+            target,
+            source_revision,
+            job,
+            operation,
+            options,
+        )
+    }
+    /// Stops or steps a job this controller owns.
+    pub fn control(
+        &mut self,
+        target: &str,
+        source_revision: &str,
+        job: &str,
+        operation: &str,
+        options: Value,
+    ) -> Result<Value> {
+        self.job_tool(
+            "crabrix_runtime_control",
+            target,
+            source_revision,
+            job,
+            operation,
+            options,
+        )
     }
     pub fn end_room(&mut self) -> Result<Value> {
         self.call("crabrix_end_room", json!({}))
@@ -393,6 +476,18 @@ fn command(node: &std::path::Path, file: &std::path::Path) -> Command {
         .env_remove("NODE_PATH");
     cmd
 }
+/// Run the bundled `crabrix doctor` diagnostics. It opens no room and reads no source.
+pub fn doctor(json_output: bool) -> Result<i32> {
+    let directory = tempfile::tempdir()?;
+    let file = directory.path().join("bridge.mjs");
+    std::fs::write(&file, BRIDGE)?;
+    let mut cmd = command(std::path::Path::new("node"), &file);
+    cmd.arg("doctor");
+    if json_output {
+        cmd.arg("--json");
+    }
+    Ok(cmd.status()?.code().unwrap_or(1))
+}
 /// Run the exact bundled MCP server over stdio, without an npm download.
 pub fn serve_mcp() -> Result<i32> {
     use std::sync::{
@@ -407,7 +502,7 @@ pub fn serve_mcp() -> Result<i32> {
     ctrlc::set_handler(move || {
         signal.store(true, Ordering::SeqCst);
     })
-    .map_err(|_| Error("Cannot install Crabrix MCP signal handler.".into()))?;
+    .map_err(|_| Error("Cannot install Crabrix MCP signal handler.".into(), None))?;
     let mut child = command(std::path::Path::new("node"), &file)
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
@@ -438,6 +533,11 @@ mod tests {
             .connect("https://example.com/#private-never-return")
             .unwrap_err();
         assert!(!e.to_string().contains("private-never-return"));
+        assert_eq!(e.code(), Some("INVALID_LINK"));
+        let e = c
+            .create_with_edition(&CreateOptions::new("Old edition"), "2018")
+            .unwrap_err();
+        assert!(!e.to_string().is_empty());
         c.close();
         assert!(c.status().is_err());
     }

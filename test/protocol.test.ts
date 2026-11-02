@@ -16,6 +16,30 @@ test("CLI version agrees with the package and language bindings embed identical 
   for (const file of ["crates/crabrix/runtime/bridge.mjs", "go/crabrix/runtime/bridge.mjs"]) assert.deepEqual(await readFile(file), bridge, file);
 });
 
+test("doctor refuses unknown flags without starting a server, and help names it", () => {
+  const help = spawnSync(process.execPath, [path.resolve("dist/cli.mjs"), "--help"], { encoding: "utf8", timeout: 5000 });
+  assert.match(help.stdout, /crabrix doctor/);
+  const invalid = spawnSync(process.execPath, [path.resolve("dist/cli.mjs"), "doctor", "--fix"], { encoding: "utf8", timeout: 5000 });
+  assert.notEqual(invalid.status, 0);
+  assert.equal(invalid.stdout, "");
+});
+
+test("one package.json version generates every install source", async () => {
+  const version = JSON.parse(await readFile("package.json", "utf8")).version;
+  const read = async (file: string) => JSON.parse(await readFile(file, "utf8"));
+  assert.deepEqual((await read(".mcp.json")).mcpServers.crabrix.args, ["-y", `crabrix@${version}`]);
+  assert.equal((await read(".claude-plugin/plugin.json")).version, version);
+  const server = await read("server.json");
+  assert.equal(server.version, version);
+  assert.equal(server.packages[0].version, version);
+  assert.equal(server.name, (await read("package.json")).mcpName);
+  const manifest = await read("docs/release-manifest.json");
+  assert.equal(manifest.version, version);
+  assert.equal(manifest.distribution.cargo.version, version);
+  assert.equal(manifest.mcp.serverName, "crabrix");
+  assert.equal(manifest.bridgeSHA256, (await read("docs/protocol-core.json")).sha256["dist/cli.mjs"]);
+});
+
 test("participant names that look like options still start a real MCP server", async () => {
   for (const name of ["--help", "--version", "Review agent 🦀"]) {
     const transport = new StdioClientTransport({ command: process.execPath, args: [path.resolve("dist/cli.mjs"), "--name", name], stderr: "pipe" });
@@ -48,7 +72,7 @@ test("official MCP client discovers and invokes the isolated bundled stdio execu
   try {
     await client.connect(transport);
     const tools = await client.listTools();
-    assert.deepEqual(tools.tools.map(t => t.name).sort(), ["crabrix_snapshot", "crabrix_handoff", "crabrix_connect", "crabrix_create", "crabrix_status", "crabrix_read_file", "crabrix_apply_changes", "crabrix_select", "crabrix_disconnect", "crabrix_end_room", "crabrix_runtime_clients", "crabrix_runtime_request", "crabrix_runtime_start", "crabrix_runtime_job"].sort());
+    assert.deepEqual(tools.tools.map(t => t.name).sort(), ["crabrix_snapshot", "crabrix_handoff", "crabrix_connect", "crabrix_create", "crabrix_status", "crabrix_read_file", "crabrix_apply_changes", "crabrix_select", "crabrix_disconnect", "crabrix_end_room", "crabrix_runtime_clients", "crabrix_runtime_request", "crabrix_runtime_start", "crabrix_runtime_job", "crabrix_runtime_inspect", "crabrix_runtime_control"].sort());
     assert.equal(tools.tools.find(t => t.name === "crabrix_read_file")?.annotations?.readOnlyHint, true);
     const status = await client.callTool({ name: "crabrix_status", arguments: {} });
     assert.equal((status.structuredContent as any).connected, false);

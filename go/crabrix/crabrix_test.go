@@ -3,6 +3,7 @@ package crabrix
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -29,6 +30,16 @@ func TestRealBundledMCP(t *testing.T) {
 	_, err = c.Connect(context.Background(), "https://example.com/#private-never-return")
 	if err == nil || strings.Contains(err.Error(), "private-never-return") {
 		t.Fatal("unsafe URL or error")
+	}
+	var refused *ToolError
+	if !errors.As(err, &refused) || refused.Code != "INVALID_LINK" {
+		t.Fatalf("expected a coded refusal, got %v", err)
+	}
+	if _, err = c.Inspect(context.Background(), strings.Repeat("a", 64), strings.Repeat("b", 64), strings.Repeat("c", 16), "status", nil); !errors.As(err, &refused) || refused.Code != "NOT_CONNECTED" {
+		t.Fatalf("expected inspect to reach the bridge and be refused, got %v", err)
+	}
+	if _, err = c.Create(context.Background(), CreateOptions{Name: "old", Edition: "2018"}); err == nil {
+		t.Fatal("unsupported edition accepted")
 	}
 	c.Close()
 	if _, err = c.Status(context.Background()); err == nil {

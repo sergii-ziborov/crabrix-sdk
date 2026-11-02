@@ -7,8 +7,8 @@ Requires **Node.js 22+**. The same bundled protocol core is embedded; no npm
 installation is needed. A browser or another agent can join without a phone app.
 
 ```sh
-go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix@v0.3.4
-go install github.com/sergii-ziborov/crabrix-sdk/go/crabrix/cmd/crabrix@v0.3.4
+go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix@v0.3.5
+go install github.com/sergii-ziborov/crabrix-sdk/go/crabrix/cmd/crabrix@v0.3.5
 ```
 
 ```go
@@ -58,7 +58,7 @@ claude mcp add --transport stdio crabrix -- crabrix
 }
 ```
 
-Choose one plugin, npm, Rust or Go launcher; all expose the same fourteen MCP tools:
+Choose one plugin, npm, Rust or Go launcher; all expose the same sixteen MCP tools:
 `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
 `crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
 `crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,

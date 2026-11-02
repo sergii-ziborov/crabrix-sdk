@@ -1,0 +1,45 @@
+{
+  "schema": "crabrix-release-manifest-v1",
+  "version": "0.3.5",
+  "integrationFamily": "crabrix",
+  "distribution": {
+    "npm": {
+      "name": "crabrix",
+      "version": "0.3.5"
+    },
+    "claudePlugin": {
+      "id": "crabrix@crabrix",
+      "version": "0.3.5"
+    },
+    "cargo": {
+      "name": "crabrix",
+      "version": "0.3.5"
+    },
+    "go": {
+      "module": "github.com/sergii-ziborov/crabrix-sdk/go/crabrix",
+      "version": "0.3.5"
+    }
+  },
+  "mcp": {
+    "serverName": "crabrix",
+    "registryName": "io.github.sergii-ziborov/crabrix",
+    "transports": [
+      "stdio"
+    ],
+    "testedProtocolVersions": [
+      "2025-11-25"
+    ],
+    "config": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "crabrix@0.3.5"
+      ]
+    }
+  },
+  "environment": {
+    "node": ">=22"
+  },
+  "bridgeSHA256": "4f8d33df2318ae6edb95c4670bd8b598118770793cd32d954313d48d1e09da84",
+  "publication": "Generated from package.json at build time. It states what this source would release; registry availability needs its own receipt."
+}

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {Crabrix,PLAYGROUND_LIMITS} from '../src/index';
+import {Crabrix,CrabrixError,PLAYGROUND_LIMITS} from '../src/index';
 test('ESM and CommonJS expose a real library without launching a compiler or MCP',async()=>{
  for(const format of ['esm','commonjs']) { const entry=path.resolve('dist/index.'+(format==='esm'?'mjs':'cjs'));const code=format==='esm'?`const {Crabrix}=await import(${JSON.stringify('file://'+entry)});const c=new Crabrix();console.log(JSON.stringify(await c.status()));c.close();`:`const {Crabrix}=require(${JSON.stringify(entry)});(async()=>{const c=new Crabrix();console.log(JSON.stringify(await c.status()));c.close()})()`;const r=spawnSync(process.execPath,['--input-type='+(format==='esm'?'module':'commonjs'),'-e',code],{encoding:'utf8',timeout:10000});assert.equal(r.status,0,r.stderr);assert.equal(JSON.parse(r.stdout).connected,false);assert.equal(r.stderr,''); }
  const client=new Crabrix({name:'Library agent'});assert.equal((await client.status()).connected,false);client.close();await assert.rejects(()=>client.status(),/closed/);
@@ -20,4 +20,11 @@ test('mixed ESM, CommonJS and programmatic MCP imports share one quiet implement
 test('strict mixed-mode TypeScript consumers share one class type without dependency typings',()=>{
  const result=spawnSync(process.execPath,['node_modules/typescript/bin/tsc','-p','test/consumer/tsconfig.json'],{encoding:'utf8',timeout:15000});
  assert.equal(result.status,0,result.stdout+result.stderr);
+});
+test('library failures carry a stable code without losing their message',async()=>{
+ const client=new Crabrix();
+ try{await assert.rejects(()=>client.connect('https://example.com/#secret'),(error:unknown)=>{assert(error instanceof CrabrixError);assert.equal(error.code,'INVALID_LINK');assert.equal(error.retryable,false);assert.match(error.message,/room link/);assert(!error.message.includes('secret'));return true;});}
+ finally{client.close();}
+ const code=`const {CrabrixError}=require(${JSON.stringify(path.resolve('dist/index.cjs'))});console.log(typeof CrabrixError);`;
+ assert.equal(spawnSync(process.execPath,['-e',code],{encoding:'utf8',timeout:10000}).stdout.trim(),'function');
 });

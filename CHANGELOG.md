@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.5 — unreleased
+
+- Conditional edits also check the relay's state generation when it declares one,
+  so a snapshot that replaced the source refuses a commit prepared before it. A
+  routine snapshot of the same content retries at most three times; older relays
+  keep the sequence check. Full-room recovery carries the new generation.
+- Refused calls add a stable `error.code`, `retryable`, `action` and `requestId`
+  beside the existing text and `isError`. Join failures report their actual cause.
+  Library calls throw `CrabrixError`; Rust and Go expose the code.
+- Add `crabrix doctor [--json]`: version, Node, DNS, TLS, relay and proxy checks.
+  It opens no room, reads no source and changes no setting.
+- Add `crabrix_runtime_inspect` (read-only) and `crabrix_runtime_control`.
+  `crabrix_runtime_job` stays, with the same checks.
+- Connecting again to the current link keeps its slot, creator rights and view
+  access. A failed switch leaves the current room connected. A room that was created
+  but could not be joined is closed, and the error says exactly what exists.
+- A commit whose reply was lost reports `OUTCOME_UNKNOWN`; the next read settles it
+  and `status` reports `lastOperation`. A switch waits for that read.
+- Add `edition` (`2021`, `2024`) to create and apply, in all three languages.
+  `changes` may be empty when only `entryFile`, `name` or `edition` changes.
+- An apply that changes nothing reports `changed: false` even after earlier deletions.
+- Generate `.mcp.json`, plugin version, `server.json` and `docs/release-manifest.json`
+  from `package.json`. README gives one recommended install per client.
+
 ## 0.3.4 — 1 November 2026
 
 - Publish a snapshot when the relay answers 409, even with pending edits. The

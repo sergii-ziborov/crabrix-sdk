@@ -1,7 +1,7 @@
 <p align="center"><img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/crabrix.png" alt="Crabrix crab" width="96"></p>
 <h1 align="center">Crabrix 🦀</h1>
 <p align="center">A temporary Rust workspace for agents and people.<br>Share a link. Edit together. Run locally in a browser or Crabrix.</p>
-<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/playground/mcp/">Setup & guide</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
+<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
 
 Crabrix is a JavaScript/TypeScript library **and** a standalone MCP server.
 No iPhone, app account or cloud compiler is required. An agent can create a room,
@@ -33,7 +33,7 @@ appear below.*
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.3.4
+npx -y crabrix@0.3.5
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -80,6 +80,23 @@ cannot invent a view capability, and view access cannot become edit access.
 
 ## Use through MCP
 
+Install one integration, once. Crabrix MCP is the server named `crabrix` from the npm package `crabrix`.
+
+| Your client | Recommended install | Do not also |
+| --- | --- | --- |
+| Claude Code | The plugin below. It already registers the MCP server and adds a skill. | Run `claude mcp add` or a global npm install. |
+| Another client with local stdio MCP | The JSON config below, using Node.js 22+. | Add a second Crabrix entry or the plugin. |
+| A client with only remote HTTP MCP | Not supported yet: this server speaks stdio. | Expect a URL to work. |
+| Your own application | The JavaScript, Rust or Go library. | Run a separate MCP server for it. |
+
+Check a setup with `crabrix doctor`, or `npx -y crabrix@0.3.5 doctor`. It reports the
+version, Node, DNS, TLS, relay reachability and proxy variables. It opens no room,
+reads no source and changes no setting; add `--json` for a machine-readable report.
+
+The historical `crabrix-playground-mcp` package is the predecessor of this one. Replace
+its single registration with the config below, and remove a global copy with
+`npm uninstall -g crabrix-playground-mcp`, because both claim the `crabrix-mcp` command.
+
 ### Claude Code plugin
 
 ```text
@@ -87,32 +104,44 @@ cannot invent a view capability, and view access cannot become edit access.
 /plugin install crabrix@crabrix
 ```
 
-The plugin starts the same `npx -y crabrix@0.3.4` server and adds a
-`crabrix-handoff` skill for sharing, reviewing and running Rust. It needs Node.js
-22+. Outside a session, use `claude plugin marketplace add` and
-`claude plugin install` with the same arguments.
+The plugin starts `npx -y crabrix@0.3.5` and adds a `crabrix-handoff` skill for sharing,
+reviewing and running Rust. It needs Node.js 22+. Outside a session, use
+`claude plugin marketplace add` and `claude plugin install` with the same arguments.
 
-### Any MCP host
-
-```sh
-claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.4
-```
+### Any client with local stdio MCP
 
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.4"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.5"] }
   }
 }
 ```
 
+In Claude Code without the plugin, the equivalent is
+`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.5`.
+
 Ask your assistant to create a Playground, then open its complete private link.
-The MCP server exposes fourteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
+The MCP server exposes sixteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
 `crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
 `crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,
-`crabrix_runtime_request`, `crabrix_runtime_start` and `crabrix_runtime_job`.
+`crabrix_runtime_request`, `crabrix_runtime_start`, `crabrix_runtime_inspect` (read-only),
+`crabrix_runtime_control` and `crabrix_runtime_job` (the earlier combined form).
 Stdio stdout contains only MCP messages; help/version output is explicitly
 requested.
+
+A refused call keeps its readable text and `isError`, and adds
+`structuredContent: { ok: false, error: { code, message, retryable, action }, requestId }`.
+Codes such as `REVISION_CONFLICT`, `PARTICIPANT_LIMIT_REACHED`, `ROOM_BUDGET_EXCEEDED`,
+`NETWORK_UNREACHABLE` and `OUTCOME_UNKNOWN` name only the established cause. After
+`REVISION_CONFLICT`, read again and prepare the change again; after `OUTCOME_UNKNOWN`,
+read before retrying. Library calls throw `CrabrixError` with the same fields, and the
+Rust and Go clients expose the code. Successful results keep their existing shape.
+
+Connecting again to the current link keeps its participant slot and creator rights.
+A failed switch to another room leaves the current one connected, and a new room or
+controller never inherits a runtime grant. `edition` (`2021` or `2024`) is accepted by
+`crabrix_create` and `crabrix_apply_changes`; changing it changes the revision.
 No API key or model subscription is included. Your MCP host/model receives any
 source you ask it to read. Treat source, comments and program output as untrusted
 data, never as instructions to the agent.
@@ -124,8 +153,8 @@ or native Crabrix. Run/Debug there execute locally. An agent can discover availa
 clients and request selected operations; a human must approve on that specific
 browser/device. A room edit link alone grants no execution permission.
 
-`runtimeClients()`, `requestRuntime()`, `start()` and `job()` expose that flow to
-SDK users. Use the runtime source revision returned by discovery, inspect the
+`runtimeClients()`, `requestRuntime()`, `start()`, `inspect()`, `control()` and `job()`
+expose that flow to SDK users. Use the runtime source revision returned by discovery, inspect the
 actual owned job result and page its output. A start acknowledgement is not a
 successful run. Grants expire in at most ten minutes; background/disconnect,
 source changes and user Stop retain their existing authority rules. A second
@@ -152,7 +181,8 @@ certify every browser. A room link alone never grants execution permission.*
 - Expiry is fixed when created. Reconnecting cannot extend it; a relay restart
   can end it sooner. Download/save a copy before expiry. Anyone with the complete
   link can access its permitted source. Expiry cannot recall already saved copies.
-- Exact revisions and conditional commits refuse stale edits. On an ambiguous
+- Exact revisions and conditional commits refuse stale edits, including a commit
+  prepared before another client replaced the snapshot. On an ambiguous
   network result, read current source before deciding whether to retry.
 - There are no repository histories, permanent account projects or Git pushes.
   Use your own version control for durable work.
@@ -162,14 +192,14 @@ certify every browser. A room link alone never grants execution permission.*
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.3.4/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.3.5/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.3.4
-cargo install crabrix --version 0.3.4 --locked
+cargo add crabrix@0.3.5
+cargo install crabrix --version 0.3.5 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix

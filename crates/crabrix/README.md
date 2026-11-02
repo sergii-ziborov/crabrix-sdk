@@ -4,7 +4,7 @@
 
 <p align="center">A temporary Rust workspace for agents and people.<br>Share source. Review together. Run locally.</p>
 
-<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/playground/mcp/">Setup & guide</a> · <a href="https://docs.rs/crabrix/0.3.4/crabrix/">Rust API</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
+<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://docs.rs/crabrix/0.3.5/crabrix/">Rust API</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
 
 **Typed Rust library and standalone MCP launcher** for encrypted, temporary
 Crabrix Playgrounds. Create a room, read or edit source, show a named selection
@@ -36,10 +36,10 @@ history and production checks in your own development workflow.
 
 ```sh
 # Add the typed library to your Rust project
-cargo add crabrix@0.3.4
+cargo add crabrix@0.3.5
 
 # Or install the optional MCP executable
-cargo install crabrix --version 0.3.4 --locked
+cargo install crabrix --version 0.3.5 --locked
 ```
 
 Install Node.js 22+ first and make `node` available on the launcher's `PATH`.
@@ -117,7 +117,7 @@ Equivalent desktop MCP configuration after installing the executable:
 }
 ```
 
-Choose one plugin, npm, Rust or Go launcher; all expose the same fourteen MCP tools:
+Choose one plugin, npm, Rust or Go launcher; all expose the same sixteen MCP tools:
 `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
 `crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
 `crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,
@@ -207,9 +207,9 @@ every assistant provider's GUI.*
 
 ## Documentation, support and license
 
-[Complete setup and permissions](https://crabrix.com/playground/mcp/) ·
+[Complete setup and permissions](https://crabrix.com/ai/) ·
 [User guide](https://crabrix.com/guide/#agent-sdk) ·
-[Rust API reference](https://docs.rs/crabrix/0.3.4/crabrix/) ·
+[Rust API reference](https://docs.rs/crabrix/0.3.5/crabrix/) ·
 [Issues and contributions](https://github.com/sergii-ziborov/crabrix-sdk/issues)
 
 SDK code and documentation are MIT licensed. Crabrix artwork, screenshots, app,
