@@ -1,0 +1,17 @@
+{
+  "version": "0.4.0",
+  "date": "2026-11-03",
+  "jsTests": 80,
+  "rustUnitTests": 4,
+  "rustDoctests": 1,
+  "goRaceTests": "passed",
+  "typedClippyAndVet": true,
+  "tools": 18,
+  "transport": "Built MCP server over stdio, from the packed tarball and again from the published crabrix@0.4.0, against https://crabrix.com",
+  "doctorAgainstProduction": true,
+  "formatTwoRoom": "create, plan_changes, apply_operations, retry reports alreadyApplied, stale revision refused with PATH_CONFLICT, apply_changes, recovery row, select, end_room",
+  "formatOneRoom": "snapshot without format field, plan_changes refused with UNSUPPORTED_ROOM_FORMAT, apply_changes unchanged",
+  "npmTarballSHA256": "ff61262bfdcf158d00ff187fe05252069c294b107900434907d1955be63e533f",
+  "goProxy": "v0.4.0 listed by proxy.golang.org",
+  "notRunForThisRelease": "Official MCP client with an installed plugin, runtime execution through a browser or app, and the Rust and Go bindings against production. Their local suites passed. Not listed in the official MCP registry."
+}
