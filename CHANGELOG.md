@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 — unreleased
+## 0.4.0 — 2026-11-03
 
 - Read and edit Playground rooms in format 2, where every file has a stable ID and a
   rename, move or delete never drops an edit made at the same time. Deleted files keep
