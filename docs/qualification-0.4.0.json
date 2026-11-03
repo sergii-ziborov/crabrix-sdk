@@ -13,5 +13,6 @@
   "formatOneRoom": "snapshot without format field, plan_changes refused with UNSUPPORTED_ROOM_FORMAT, apply_changes unchanged",
   "npmTarballSHA256": "ff61262bfdcf158d00ff187fe05252069c294b107900434907d1955be63e533f",
   "goProxy": "v0.4.0 listed by proxy.golang.org",
-  "notRunForThisRelease": "Official MCP client with an installed plugin, runtime execution through a browser or app, and the Rust and Go bindings against production. Their local suites passed. Not listed in the official MCP registry."
+  "notRunForThisRelease": "Official MCP client with an installed plugin, runtime execution through a browser or app, and the Rust and Go bindings against production. Their local suites passed.",
+  "mcpRegistry": "io.github.sergii-ziborov/crabrix 0.4.0 published 2026-11-03T09:03:35Z, active and latest"
 }
