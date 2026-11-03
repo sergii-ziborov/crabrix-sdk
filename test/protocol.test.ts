@@ -72,7 +72,10 @@ test("official MCP client discovers and invokes the isolated bundled stdio execu
   try {
     await client.connect(transport);
     const tools = await client.listTools();
-    assert.deepEqual(tools.tools.map(t => t.name).sort(), ["crabrix_snapshot", "crabrix_handoff", "crabrix_connect", "crabrix_create", "crabrix_status", "crabrix_read_file", "crabrix_apply_changes", "crabrix_select", "crabrix_disconnect", "crabrix_end_room", "crabrix_runtime_clients", "crabrix_runtime_request", "crabrix_runtime_start", "crabrix_runtime_job", "crabrix_runtime_inspect", "crabrix_runtime_control"].sort());
+    assert.deepEqual(tools.tools.map(t => t.name).sort(), ["crabrix_snapshot", "crabrix_handoff", "crabrix_connect", "crabrix_create", "crabrix_status", "crabrix_read_file", "crabrix_apply_changes", "crabrix_select", "crabrix_plan_changes", "crabrix_apply_operations", "crabrix_disconnect", "crabrix_end_room", "crabrix_runtime_clients", "crabrix_runtime_request", "crabrix_runtime_start", "crabrix_runtime_job", "crabrix_runtime_inspect", "crabrix_runtime_control"].sort());
+    assert.equal(tools.tools.length, 18);
+    assert.equal(tools.tools.find(t => t.name === "crabrix_plan_changes")?.annotations?.readOnlyHint, true);
+    assert.equal(tools.tools.find(t => t.name === "crabrix_apply_operations")?.annotations?.readOnlyHint, false);
     assert.equal(tools.tools.find(t => t.name === "crabrix_read_file")?.annotations?.readOnlyHint, true);
     const status = await client.callTool({ name: "crabrix_status", arguments: {} });
     assert.equal((status.structuredContent as any).connected, false);

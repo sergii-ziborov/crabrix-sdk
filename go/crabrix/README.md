@@ -7,8 +7,8 @@ Requires **Node.js 22+**. The same bundled protocol core is embedded; no npm
 installation is needed. A browser or another agent can join without a phone app.
 
 ```sh
-go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix@v0.3.5
-go install github.com/sergii-ziborov/crabrix-sdk/go/crabrix/cmd/crabrix@v0.3.5
+go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix@v0.4.0
+go install github.com/sergii-ziborov/crabrix-sdk/go/crabrix/cmd/crabrix@v0.4.0
 ```
 
 ```go
@@ -58,11 +58,14 @@ claude mcp add --transport stdio crabrix -- crabrix
 }
 ```
 
-Choose one plugin, npm, Rust or Go launcher; all expose the same sixteen MCP tools:
+Choose one plugin, npm, Rust or Go launcher; all expose the same eighteen MCP tools:
 `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
-`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
-`crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,
-`crabrix_runtime_request`, `crabrix_runtime_start` and `crabrix_runtime_job`.
+`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_plan_changes`,
+`crabrix_apply_operations`, `crabrix_handoff`, `crabrix_disconnect`, `crabrix_end_room`,
+`crabrix_runtime_clients`, `crabrix_runtime_request`, `crabrix_runtime_start`,
+`crabrix_runtime_inspect`, `crabrix_runtime_control` and `crabrix_runtime_job`.
+In a room with stable file IDs (format 2), plan renames, moves, deletions and restores
+with `crabrix_plan_changes` and apply them once with `crabrix_apply_operations`.
 No model or AI subscription is included. Your MCP host/model receives any source
 you ask it to read.
 

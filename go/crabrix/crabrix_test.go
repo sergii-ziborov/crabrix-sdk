@@ -38,6 +38,13 @@ func TestRealBundledMCP(t *testing.T) {
 	if _, err = c.Inspect(context.Background(), strings.Repeat("a", 64), strings.Repeat("b", 64), strings.Repeat("c", 16), "status", nil); !errors.As(err, &refused) || refused.Code != "NOT_CONNECTED" {
 		t.Fatalf("expected inspect to reach the bridge and be refused, got %v", err)
 	}
+	operations := []map[string]any{{"kind": "create", "path": "notes.md", "text": "x"}}
+	if _, err = c.PlanChanges(context.Background(), operations); !errors.As(err, &refused) || refused.Code != "NOT_CONNECTED" {
+		t.Fatalf("expected planning to reach the bridge and be refused, got %v", err)
+	}
+	if _, err = c.ApplyOperations(context.Background(), operations, strings.Repeat("a", 32), strings.Repeat("b", 32), "go-operation-1"); !errors.As(err, &refused) || refused.Code != "NOT_CONNECTED" {
+		t.Fatalf("expected applying to reach the bridge and be refused, got %v", err)
+	}
 	if _, err = c.Create(context.Background(), CreateOptions{Name: "old", Edition: "2018"}); err == nil {
 		t.Fatal("unsupported edition accepted")
 	}

@@ -22,6 +22,15 @@ and `docs/release-manifest.json`, and fails if `src/version.ts` or Cargo disagre
 `docs/release-manifest.json` states what this source would release; registry
 availability still needs its own publication receipt.
 
+The shared core in `src/core` is ported from the website. `src/core/provenance.json`
+names the site commit and each site file's SHA-256; the build refuses a core file
+without an entry and writes both hashes to `docs/protocol-core.json`. The codec and
+relay tests from the site (`test/codec-v2.test.ts`, `test/relay-codec.test.ts`) run
+unchanged apart from import paths. `test/support/rooms.ts` is the site's relay class and
+`test/support/relay.ts` serves it over loopback HTTP the way the site's routes do, so
+`test/room-v2.test.ts` exercises format 2 rooms, the 426 refusal of clients that do not
+declare format 2, and the format 1 regression without a network.
+
 The Claude Code plugin manifests must stay valid:
 `claude plugin validate . --strict`. The plugin starts the published npm version
 named in `.mcp.json`, so publish npm before announcing a plugin version.

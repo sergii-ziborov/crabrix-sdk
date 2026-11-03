@@ -1,11 +1,98 @@
 {
-  "version": "0.3.5",
+  "version": "0.4.0",
   "sha256": {
-    "dist/cli.mjs": "4f8d33df2318ae6edb95c4670bd8b598118770793cd32d954313d48d1e09da84",
-    "crates/crabrix/runtime/bridge.mjs": "4f8d33df2318ae6edb95c4670bd8b598118770793cd32d954313d48d1e09da84",
-    "go/crabrix/runtime/bridge.mjs": "4f8d33df2318ae6edb95c4670bd8b598118770793cd32d954313d48d1e09da84"
+    "dist/cli.mjs": "2844aafdc0411210a67ab02febf8e101994bf053ebff19eb43ac15c7650a4dbc",
+    "crates/crabrix/runtime/bridge.mjs": "2844aafdc0411210a67ab02febf8e101994bf053ebff19eb43ac15c7650a4dbc",
+    "go/crabrix/runtime/bridge.mjs": "2844aafdc0411210a67ab02febf8e101994bf053ebff19eb43ac15c7650a4dbc"
   },
   "requires": "Node.js 22+",
   "source": "src/cli.ts and src/core",
-  "npmPackage": "crabrix@0.3.5"
+  "npmPackage": "crabrix@0.4.0",
+  "documentFormats": [
+    1,
+    2
+  ],
+  "core": {
+    "repository": "https://github.com/sergii-ziborov/Crabrix",
+    "commit": "e04e9ff3bfbcad210c1e86525293ac8585798e68",
+    "files": [
+      {
+        "file": "src/core/playground-codec-v2.ts",
+        "sha256": "815c036d31939ef6e03fd00d007c735548368152a0ab3fe25e6e7cab105aa5d4",
+        "site": "site/lib/playground-codec-v2.ts",
+        "siteSHA256": "852083801fb8df3d42757a5df5ed5e95630efe096244e4b990c1e265840f9112",
+        "adaptations": "Node ESM import specifiers (.js)."
+      },
+      {
+        "file": "src/core/playground-collab.ts",
+        "sha256": "7f0a68a96f3e1da1947edfb3381bd2d56df936d7c7aca525320237839aed3175",
+        "site": "site/lib/playground-collab.ts",
+        "siteSHA256": "5206c9dca21c861ba7e448d7660b0816b59438b953e79e37fa689733e11eea0e",
+        "adaptations": "Node ESM import specifiers (.js)."
+      },
+      {
+        "file": "src/core/playground-crypto.ts",
+        "sha256": "4e583c7ad05bc1c1a309d203e55bb2e3107b51a367e449423af3eaea388c464a",
+        "site": "site/lib/playground-crypto.ts",
+        "siteSHA256": "d4be833c1156f36d94dc8cf86b8394d6a9e01310999d759c322b7db1688e9b00",
+        "adaptations": "EncryptedPacket is declared locally instead of importing the relay module."
+      },
+      {
+        "file": "src/core/playground-document.ts",
+        "sha256": "82a9d6985b76f701ae09dcc5787a8fcfae87bcb02973a3171131cf54a7391bf9",
+        "site": "site/lib/playground-document.ts",
+        "siteSHA256": "82a9d6985b76f701ae09dcc5787a8fcfae87bcb02973a3171131cf54a7391bf9",
+        "adaptations": "None."
+      },
+      {
+        "file": "src/core/playground-file-ops.ts",
+        "sha256": "deb4f4bd90995e4129a85272f677a0c7272b35c88bc93c9c274f3fb7a6651c62",
+        "site": "site/lib/playground-file-ops.ts",
+        "siteSHA256": "4421598501a17c4ec88d7d3be7d3c553475b0a7a833f024577b9a978b98651fe",
+        "adaptations": "Node ESM import specifiers (.js). The SDK uses only insideFolder, through the codec."
+      },
+      {
+        "file": "src/core/playground-presence.ts",
+        "sha256": "e6c9dd02a8a20da6244446e13bbce752a9742e0f294dc48b0d50ac0ef7c0928b",
+        "site": "site/lib/playground-presence.ts",
+        "siteSHA256": "69d2aaa2ed1bd5dcd0edc50827c29553cbf40da75b6a6505547af734128bdd36",
+        "adaptations": "Node ESM import specifiers (.js). Format 2 cursors are resolved in src/room.ts."
+      },
+      {
+        "file": "src/core/playground-runtime-controller.ts",
+        "sha256": "e3987f73c80b89709409fd0d1f1500c72ac0788254098fb70ee6f463854ff789",
+        "site": "site/lib/playground-runtime-controller.ts",
+        "siteSHA256": "59704dafaae1b91bac5509c4738087266d75c3959a911895932f393a46b719f2",
+        "adaptations": "Node ESM import specifiers (.js); the controller signs with the configured participant name."
+      },
+      {
+        "file": "src/core/playground-runtime-protocol.ts",
+        "sha256": "59ee69e34c00dfa190e2378a1519bef3f49498cd75eb09ab9d745c51638e2a15",
+        "site": "site/lib/playground-runtime-protocol.ts",
+        "siteSHA256": "7270b1b02c48dbe5c58d7809f7ecba0361926f18275d8d841491961c7c0e4b65",
+        "adaptations": "Node ESM import specifiers (.js)."
+      },
+      {
+        "file": "src/core/playground-runtime-source.ts",
+        "sha256": "eb245ce8ed415a81d3a7e612547bd455ebf9ba3aa5cdaed18a6f9fc271831aa2",
+        "site": "site/lib/playground-runtime-source.ts",
+        "siteSHA256": "6640ec539d3e96040e86ca11e2f32e605ebf0492f1135fab1cf7932ebe9a4d9d",
+        "adaptations": "Node ESM import specifiers (.js)."
+      },
+      {
+        "file": "src/core/playground-session.ts",
+        "sha256": "3f21af7cac403b16413cca47c7dfb650669a04442765868a8960b2a392597d75",
+        "site": "site/lib/playground-session.ts",
+        "siteSHA256": "4b8465d25e821e982dc21f46c7fdd6c54295a6c169b259447b6c6beadbe60945",
+        "adaptations": "Node ESM import specifiers (.js); redirect: \"error\" on every fetch; local EncryptedPacket and transient snapshot statuses; a 4.5 MB state bound; lastFailure and HTTP status on stream failures; a full room on runtime confirmation schedules the drain; a room of an unknown format fails with status 426; snapshotBytes is exported for src/room.ts."
+      },
+      {
+        "file": "test/support/rooms.ts",
+        "sha256": "208a23207236914ba44f69ceb78ec830b5ba7a7d0228dad156c7e65af25e1946",
+        "site": "site/lib/playground-rooms.ts",
+        "siteSHA256": "208a23207236914ba44f69ceb78ec830b5ba7a7d0228dad156c7e65af25e1946",
+        "adaptations": "None. The real relay class, used behind loopback HTTP in tests."
+      }
+    ]
+  }
 }

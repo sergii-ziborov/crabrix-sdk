@@ -274,6 +274,8 @@ impl Client {
             "crabrix_read_file",
             "crabrix_apply_changes",
             "crabrix_select",
+            "crabrix_plan_changes",
+            "crabrix_apply_operations",
             "crabrix_handoff",
             "crabrix_disconnect",
             "crabrix_end_room",
@@ -350,6 +352,26 @@ impl Client {
         self.call(
             "crabrix_select",
             json!({"path":path,"anchor":anchor,"head":head,"expectedRevision":expected_revision}),
+        )
+    }
+    /// Checks up to 32 file operations in a format 2 (stable file ID) room without
+    /// changing anything, e.g. `json!([{"kind":"move","file":{"path":"a.rs"},"path":"src/a.rs"}])`.
+    /// Returns the plan, its revision and `planHash`.
+    pub fn plan_changes(&mut self, operations: Value) -> Result<Value> {
+        self.call("crabrix_plan_changes", json!({"operations":operations}))
+    }
+    /// Applies a reviewed plan once. Retrying with the same `operation_id` and
+    /// operations reports `alreadyApplied` instead of applying twice.
+    pub fn apply_operations(
+        &mut self,
+        operations: Value,
+        expected_revision: &str,
+        plan_hash: &str,
+        operation_id: &str,
+    ) -> Result<Value> {
+        self.call(
+            "crabrix_apply_operations",
+            json!({"operations":operations,"expectedRevision":expected_revision,"planHash":plan_hash,"operationId":operation_id}),
         )
     }
     pub fn share(&mut self, mode: &str) -> Result<Handoff> {
@@ -534,6 +556,18 @@ mod tests {
             .unwrap_err();
         assert!(!e.to_string().contains("private-never-return"));
         assert_eq!(e.code(), Some("INVALID_LINK"));
+        let operations = json!([{"kind":"create","path":"notes.md","text":"x"}]);
+        let e = c.plan_changes(operations.clone()).unwrap_err();
+        assert_eq!(e.code(), Some("NOT_CONNECTED"));
+        let e = c
+            .apply_operations(
+                operations,
+                &"a".repeat(32),
+                &"b".repeat(32),
+                "rust-operation-1",
+            )
+            .unwrap_err();
+        assert_eq!(e.code(), Some("NOT_CONNECTED"));
         let e = c
             .create_with_edition(&CreateOptions::new("Old edition"), "2018")
             .unwrap_err();

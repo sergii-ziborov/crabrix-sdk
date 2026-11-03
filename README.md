@@ -33,7 +33,7 @@ appear below.*
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.3.5
+npx -y crabrix@0.4.0
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -89,7 +89,7 @@ Install one integration, once. Crabrix MCP is the server named `crabrix` from th
 | A client with only remote HTTP MCP | Not supported yet: this server speaks stdio. | Expect a URL to work. |
 | Your own application | The JavaScript, Rust or Go library. | Run a separate MCP server for it. |
 
-Check a setup with `crabrix doctor`, or `npx -y crabrix@0.3.5 doctor`. It reports the
+Check a setup with `crabrix doctor`, or `npx -y crabrix@0.4.0 doctor`. It reports the
 version, Node, DNS, TLS, relay reachability and proxy variables. It opens no room,
 reads no source and changes no setting; add `--json` for a machine-readable report.
 
@@ -104,7 +104,7 @@ its single registration with the config below, and remove a global copy with
 /plugin install crabrix@crabrix
 ```
 
-The plugin starts `npx -y crabrix@0.3.5` and adds a `crabrix-handoff` skill for sharing,
+The plugin starts `npx -y crabrix@0.4.0` and adds a `crabrix-handoff` skill for sharing,
 reviewing and running Rust. It needs Node.js 22+. Outside a session, use
 `claude plugin marketplace add` and `claude plugin install` with the same arguments.
 
@@ -113,17 +113,18 @@ reviewing and running Rust. It needs Node.js 22+. Outside a session, use
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.3.5"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.4.0"] }
   }
 }
 ```
 
 In Claude Code without the plugin, the equivalent is
-`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.3.5`.
+`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.4.0`.
 
 Ask your assistant to create a Playground, then open its complete private link.
-The MCP server exposes sixteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
-`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
+The MCP server exposes eighteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
+`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_plan_changes` (read-only),
+`crabrix_apply_operations`, `crabrix_handoff`,
 `crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,
 `crabrix_runtime_request`, `crabrix_runtime_start`, `crabrix_runtime_inspect` (read-only),
 `crabrix_runtime_control` and `crabrix_runtime_job` (the earlier combined form).
@@ -137,6 +138,40 @@ Codes such as `REVISION_CONFLICT`, `PARTICIPANT_LIMIT_REACHED`, `ROOM_BUDGET_EXC
 `REVISION_CONFLICT`, read again and prepare the change again; after `OUTCOME_UNKNOWN`,
 read before retrying. Library calls throw `CrabrixError` with the same fields, and the
 Rust and Go clients expose the code. Successful results keep their existing shape.
+
+### Rooms with stable file IDs
+
+Crabrix is moving shared rooms to a second document format in which every file has a
+stable ID and its path is only a field. A rename never loses an edit made at the same
+moment, a deleted file keeps its text in a recovery list until someone purges it, and
+reading a room never fails because of concurrent changes: a path two people claimed
+shows as a `conflict-…` name, and a project that cannot run lists why in `blocked`.
+Rooms are still created in format 1 by default; `format: 2` on `crabrix_create` is for
+testing until Crabrix switches. Older SDKs and apps cannot open a format 2 room: the
+relay answers 426, which this SDK reports as `CLIENT_UPDATE_REQUIRED`.
+
+In a format 2 room, `crabrix_status` and `crabrix_snapshot` add `format: 2`, file `id`s,
+`conflict` names, `recovery` rows (path, size, `conflict`, `orphan`; text only with
+`includeRecoveryText`) and `blocked`; `crabrix_read_file` also reads by `id`, including
+a recovery row. Revisions there are 32 hex characters. `crabrix_apply_changes` keeps
+working: an existing path is a write, a new path a create, `text: null` a delete to
+recovery. To rename, move, copy, restore or purge, plan first:
+
+1. `crabrix_plan_changes` takes up to 32 operations (`create`, `copy`, `write`, `move`,
+   `moveFolder`, `delete`, `deleteFolder`, `restore`, `purge`, `setEntry`, `setEdition`,
+   `setName`), naming files by `id` or shown `path`. It changes nothing and returns what
+   would change, the project afterwards, the `revision` it read and a `planHash`.
+2. `crabrix_apply_operations` takes the same operations, that `expectedRevision` and
+   `planHash`, and a new `operationId`. Everything applies in one update or nothing does.
+   A project that changed meanwhile gives `REVISION_CONFLICT`; other operations under a
+   reviewed hash give `PLAN_CHANGED`. Retrying the same `operationId` after
+   `OUTCOME_UNKNOWN` returns `alreadyApplied: true` without a second change, while the
+   same ID with different operations gives `OPERATION_ID_CONFLICT`.
+
+In a format 1 room both tools answer `UNSUPPORTED_ROOM_FORMAT`; use `crabrix_apply_changes`.
+The library exposes the same as `planChanges()`, `applyOperations()`, `readById()` and
+`snapshot({ includeRecoveryText })`; Rust and Go add `plan_changes`/`PlanChanges` and
+`apply_operations`/`ApplyOperations`.
 
 Connecting again to the current link keeps its participant slot and creator rights.
 A failed switch to another room leaves the current one connected, and a new room or
@@ -192,14 +227,14 @@ certify every browser. A room link alone never grants execution permission.*
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.3.5/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.4.0/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.3.5
-cargo install crabrix --version 0.3.5 --locked
+cargo add crabrix@0.4.0
+cargo install crabrix --version 0.4.0 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix

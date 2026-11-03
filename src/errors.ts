@@ -1,10 +1,13 @@
+import { PlanError, type PlanErrorCode } from "./core/playground-codec-v2.js";
+
 // A stable machine-readable reason beside the existing human text. Codes name only
 // the cause actually established: an unexplained 409 is not called a stale revision.
 export type ErrorCode =
   | "INVALID_LINK" | "INVALID_ARGUMENT" | "NOT_CONNECTED" | "ROOM_EXPIRED" | "PARTICIPANT_LIMIT_REACHED" | "ROOM_BUDGET_EXCEEDED"
   | "ACCESS_DENIED" | "READ_ONLY" | "REVISION_CONFLICT" | "PATH_CONFLICT" | "LIMIT_EXCEEDED" | "RATE_LIMITED" | "BRIDGE_CLOSED"
   | "NETWORK_UNREACHABLE" | "TLS_ERROR" | "PROXY_ERROR" | "JOIN_TIMEOUT" | "RELAY_CONFLICT" | "RELAY_UNAVAILABLE"
-  | "RUNTIME_GRANT_REQUIRED" | "RUNTIME_UNAVAILABLE" | "OUTCOME_UNKNOWN" | "OPERATION_FAILED";
+  | "RUNTIME_GRANT_REQUIRED" | "RUNTIME_UNAVAILABLE" | "OUTCOME_UNKNOWN" | "OPERATION_FAILED"
+  | "CLIENT_UPDATE_REQUIRED" | "UNSUPPORTED_ROOM_FORMAT" | "PLAN_CHANGED" | "OPERATION_ID_CONFLICT" | "RECOVERY_FULL" | "PROJECT_BLOCKED";
 
 const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   INVALID_LINK: { retryable: false, action: "check_link" },
@@ -30,6 +33,12 @@ const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   RUNTIME_UNAVAILABLE: { retryable: true, action: "select_runtime_client" },
   OUTCOME_UNKNOWN: { retryable: false, action: "read_state_before_retry" },
   OPERATION_FAILED: { retryable: false, action: "report" },
+  CLIENT_UPDATE_REQUIRED: { retryable: false, action: "update_sdk" },
+  UNSUPPORTED_ROOM_FORMAT: { retryable: false, action: "use_apply_changes" },
+  PLAN_CHANGED: { retryable: true, action: "replan" },
+  OPERATION_ID_CONFLICT: { retryable: false, action: "use_new_operation_id" },
+  RECOVERY_FULL: { retryable: false, action: "clear_recovery" },
+  PROJECT_BLOCKED: { retryable: false, action: "fix_project" },
 };
 
 export class CrabrixError extends Error {
@@ -50,6 +59,8 @@ export class RelayError extends CrabrixError {
   constructor(code: ErrorCode, message: string, status?: number) { super(code, message); this.status = status; }
 }
 
+const UPDATE_REQUIRED = "This Playground uses a newer document format than this Crabrix SDK reads. Update Crabrix (npm crabrix, the Rust crate or the Go module) to open it.";
+
 /** The relay's own wording is matched to classify, and never echoed to the caller. */
 export function relayError(status: number, relayMessage = ""): RelayError {
   if (status === 409) {
@@ -63,6 +74,7 @@ export function relayError(status: number, relayMessage = ""): RelayError {
   if (status === 413) return new RelayError("LIMIT_EXCEEDED", "This change exceeds the relay's size limit.", status);
   if (status === 429) return new RelayError("RATE_LIMITED", "The Playground relay asked to slow down. Wait a minute before retrying.", status);
   if (status === 503) return new RelayError("RELAY_UNAVAILABLE", "The Playground relay is at capacity. Retry later.", status);
+  if (status === 426) return new RelayError("CLIENT_UPDATE_REQUIRED", UPDATE_REQUIRED, status);
   return new RelayError("RELAY_UNAVAILABLE", "The Playground relay could not complete this operation.", status);
 }
 
@@ -95,6 +107,7 @@ export function networkError(error: unknown): CrabrixError | null {
 
 const KNOWN: [RegExp, ErrorCode][] = [
   [/bridge is closed/i, "BRIDGE_CLOSED"],
+  [/newer format|Update Crabrix/, "CLIENT_UPDATE_REQUIRED"],
   [/Revision conflict/, "REVISION_CONFLICT"],
   [/view-only/, "READ_ONLY"],
   [/Connect to a (?:live )?Playground first|Wait for the shared connection/, "NOT_CONNECTED"],
@@ -107,9 +120,17 @@ const KNOWN: [RegExp, ErrorCode][] = [
   [/Choose a lifetime|Choose edit or view|Selection must|surrogate pair|Invalid source project|Choose a Rust source entry|project name|participant name/, "INVALID_ARGUMENT"],
 ];
 
+// A refused plan changes nothing; its own code stays in the details.
+const PLAN_CODES: Record<PlanErrorCode, ErrorCode> = {
+  "invalid-operation": "INVALID_ARGUMENT", "not-found": "PATH_CONFLICT", "invalid-path": "PATH_CONFLICT", "path-taken": "PATH_CONFLICT",
+  limit: "LIMIT_EXCEEDED", "recovery-budget": "RECOVERY_FULL", stale: "REVISION_CONFLICT", "plan-changed": "PLAN_CHANGED", "operation-conflict": "OPERATION_ID_CONFLICT",
+};
+export const planError = (error: PlanError) => new CrabrixError(PLAN_CODES[error.code] ?? "OPERATION_FAILED", error.message, { planError: error.code });
+
 /** Keeps each original message; only adds the code a caller can act on. */
 export function toCrabrixError(error: unknown): CrabrixError {
   if (error instanceof CrabrixError) return error;
+  if (error instanceof PlanError) return planError(error);
   const network = networkError(error);
   const message = error instanceof Error ? error.message : "This Playground operation failed.";
   if (network && !KNOWN.some(([pattern]) => pattern.test(message))) return network;

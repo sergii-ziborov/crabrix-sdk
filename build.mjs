@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { mkdir, readFile, writeFile, chmod, copyFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile, chmod, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -62,7 +62,7 @@ await writeFile(path.join(root, "ThirdPartyNotices.txt"), notices.join("\n"));
 await writeFile(path.join(root, "dist/components.json"), JSON.stringify([...packages].map(([name, { info }]) => ({ name, license: info.license })), null, 2) + "\n");
 const sources = {};
 const repository = root;
-for (const input of new Set([...bundledInputs].filter(file => !file.includes("node_modules")).concat(["src/types.ts", "build.mjs", "tsconfig.json", "package.json", "LICENSE", "README.md"]))) {
+for (const input of new Set([...bundledInputs].filter(file => !file.includes("node_modules")).concat(["src/types.ts", "src/core/provenance.json", "build.mjs", "tsconfig.json", "package.json", "LICENSE", "README.md"]))) {
   const file = path.resolve(root, input), relative = path.relative(repository, file);
   if (relative.startsWith("..") || path.isAbsolute(relative)) throw new Error("Bundled source is outside the repository.");
   sources[relative.split(path.sep).join("/")] = createHash("sha256").update(await readFile(file)).digest("hex");
@@ -84,10 +84,24 @@ for (const directory of ["crates/crabrix", "go/crabrix"]) {
   await copyFile(path.join(root, "ThirdPartyNotices.txt"), path.join(root, directory, "ThirdPartyNotices.txt"));
 }
 const digest = createHash("sha256").update(bridge).digest("hex");
+// The shared core is ported from the website. src/core/provenance.json names the site
+// commit and the hash of each site file; every core file must be listed there.
+const provenance = JSON.parse(await readFile(path.join(root, "src/core/provenance.json"), "utf8"));
+if (!/^[a-f0-9]{40}$/.test(provenance.commit ?? "")) throw new Error("src/core/provenance.json needs the full site commit.");
+const coreFiles = (await readdir(path.join(root, "src/core"))).filter(file => file.endsWith(".ts")).map(file => "src/core/" + file);
+const unlisted = coreFiles.filter(file => !provenance.files?.[file]);
+if (unlisted.length) throw new Error("Core files without provenance: " + unlisted.join(", "));
+const core = [];
+for (const [file, origin] of Object.entries(provenance.files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
+  if (typeof origin.site !== "string" || !/^[a-f0-9]{64}$/.test(origin.siteSHA256 ?? "")) throw new Error("Incomplete provenance: " + file);
+  core.push({ file, sha256: createHash("sha256").update(await readFile(path.join(root, file))).digest("hex"), site: origin.site, siteSHA256: origin.siteSHA256, adaptations: origin.adaptations });
+}
 await writeFile(path.join(root, "docs/protocol-core.json"), JSON.stringify({
   version: packageInfo.version,
   sha256: Object.fromEntries(["dist/cli.mjs", "crates/crabrix/runtime/bridge.mjs", "go/crabrix/runtime/bridge.mjs"].map(file => [file, digest])),
   requires: "Node.js 22+", source: "src/cli.ts and src/core", npmPackage: `crabrix@${packageInfo.version}`,
+  documentFormats: [1, 2],
+  core: { repository: provenance.repository, commit: provenance.commit, files: core },
 }, null, 2) + "\n");
 await writeJSON("docs/release-manifest.json", {
   schema: "crabrix-release-manifest-v1", version: packageInfo.version, integrationFamily: "crabrix",

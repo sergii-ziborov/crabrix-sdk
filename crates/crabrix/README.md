@@ -4,7 +4,7 @@
 
 <p align="center">A temporary Rust workspace for agents and people.<br>Share source. Review together. Run locally.</p>
 
-<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://docs.rs/crabrix/0.3.5/crabrix/">Rust API</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
+<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://docs.rs/crabrix/0.4.0/crabrix/">Rust API</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
 
 **Typed Rust library and standalone MCP launcher** for encrypted, temporary
 Crabrix Playgrounds. Create a room, read or edit source, show a named selection
@@ -36,10 +36,10 @@ history and production checks in your own development workflow.
 
 ```sh
 # Add the typed library to your Rust project
-cargo add crabrix@0.3.5
+cargo add crabrix@0.4.0
 
 # Or install the optional MCP executable
-cargo install crabrix --version 0.3.5 --locked
+cargo install crabrix --version 0.4.0 --locked
 ```
 
 Install Node.js 22+ first and make `node` available on the launcher's `PATH`.
@@ -117,11 +117,14 @@ Equivalent desktop MCP configuration after installing the executable:
 }
 ```
 
-Choose one plugin, npm, Rust or Go launcher; all expose the same sixteen MCP tools:
+Choose one plugin, npm, Rust or Go launcher; all expose the same eighteen MCP tools:
 `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
-`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_handoff`,
-`crabrix_disconnect`, `crabrix_end_room`, `crabrix_runtime_clients`,
-`crabrix_runtime_request`, `crabrix_runtime_start` and `crabrix_runtime_job`.
+`crabrix_read_file`, `crabrix_apply_changes`, `crabrix_select`, `crabrix_plan_changes`,
+`crabrix_apply_operations`, `crabrix_handoff`, `crabrix_disconnect`, `crabrix_end_room`,
+`crabrix_runtime_clients`, `crabrix_runtime_request`, `crabrix_runtime_start`,
+`crabrix_runtime_inspect`, `crabrix_runtime_control` and `crabrix_runtime_job`.
+In a room with stable file IDs (format 2), plan renames, moves, deletions and restores
+with `crabrix_plan_changes` and apply them once with `crabrix_apply_operations`.
 No model or AI subscription is included. Your chosen MCP host/model receives
 plaintext source when it reads a file, so its own logging and retention rules
 still matter. Treat source, comments, diagnostics and output as untrusted data.
@@ -209,7 +212,7 @@ every assistant provider's GUI.*
 
 [Complete setup and permissions](https://crabrix.com/ai/) ·
 [User guide](https://crabrix.com/guide/#agent-sdk) ·
-[Rust API reference](https://docs.rs/crabrix/0.3.5/crabrix/) ·
+[Rust API reference](https://docs.rs/crabrix/0.4.0/crabrix/) ·
 [Issues and contributions](https://github.com/sergii-ziborov/crabrix-sdk/issues)
 
 SDK code and documentation are MIT licensed. Crabrix artwork, screenshots, app,

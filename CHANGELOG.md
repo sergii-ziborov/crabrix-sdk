@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.0 — unreleased
+
+- Read and edit Playground rooms in format 2, where every file has a stable ID and a
+  rename, move or delete never drops an edit made at the same time. Deleted files keep
+  their text as recovery rows until purged; collisions read as `conflict-…` names and a
+  project that cannot run reports `blocked` reasons instead of failing to load.
+- Add `crabrix_plan_changes` (read-only, up to 32 operations: returns the plan, its
+  revision and `planHash`) and `crabrix_apply_operations` (needs that revision, the
+  `planHash` and an `operationId`; one update or nothing; a retried ID reports
+  `alreadyApplied`). Both answer `UNSUPPORTED_ROOM_FORMAT` in a format 1 room.
+- In a format 2 room, `crabrix_status`, `crabrix_snapshot` and `crabrix_read_file` add
+  file IDs, conflicts, recovery rows and `blocked`, `crabrix_read_file` reads by `id`, and
+  `crabrix_apply_changes` maps paths to writes, creates and deletes. Revisions there have
+  32 hex characters. Format 1 results keep their shape.
+- `crabrix_create` still creates format 1 rooms; `format: 2` is for testing until new
+  rooms move to it. Every relay request declares the formats this SDK reads. A room of a
+  newer format answers `CLIENT_UPDATE_REQUIRED` at once instead of `JOIN_TIMEOUT`.
+- New codes: `CLIENT_UPDATE_REQUIRED`, `UNSUPPORTED_ROOM_FORMAT`, `PLAN_CHANGED`,
+  `OPERATION_ID_CONFLICT`, `RECOVERY_FULL` and `PROJECT_BLOCKED`. A refused plan keeps
+  its own reason in `error.details.planError`.
+- The shared core is ported from the website at `e04e9ff`. `docs/protocol-core.json`
+  records each site file's SHA-256 beside the SDK file's.
+- The library adds `planChanges()`, `applyOperations()`, `readById()` and
+  `snapshot({ includeRecoveryText })`; Rust and Go add `plan_changes`/`PlanChanges` and
+  `apply_operations`/`ApplyOperations`.
+
 ## 0.3.5 — 2026-11-02
 
 - Conditional edits also check the relay's state generation when it declares one,

@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { proxyVariables } from "./errors.js";
 import { SDK_VERSION, SERVER_NAME } from "./version.js";
+import { CLIENT_CODECS } from "./core/playground-session.js";
 
 export const RELAY_ORIGIN = "https://crabrix.com";
 const PROBE_ROOM = "doctor-probe-not-a-room0"; // Valid shape, never created: the relay answers 410.
@@ -97,7 +98,7 @@ export async function runDoctor(options: Options = {}): Promise<DoctorReport> {
   else checks.push({ name: "tls", status: "skipped", detail: "The test relay does not use TLS." });
   // A deliberately unknown room proves the relay's route answers. No room is created or read.
   try {
-    const response = await fetch(`${origin.origin}/api/playground/rooms/${PROBE_ROOM}/`, { redirect: "error", cache: "no-store", signal: AbortSignal.timeout(timeoutMs), headers: { Authorization: "Bearer " + PROBE_TOKEN } });
+    const response = await fetch(`${origin.origin}/api/playground/rooms/${PROBE_ROOM}/`, { redirect: "error", cache: "no-store", signal: AbortSignal.timeout(timeoutMs), headers: { Authorization: "Bearer " + PROBE_TOKEN, "X-Crabrix-Codecs": CLIENT_CODECS } });
     await response.body?.cancel().catch(() => {});
     const answered = response.status === 410 || response.status === 403;
     checks.push(answered ? { name: "relay", status: "ok", detail: "HTTPS reaches the Playground relay." } : { name: "relay", status: "failed", detail: `The relay answered HTTP ${response.status}.` });

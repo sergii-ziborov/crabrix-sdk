@@ -273,7 +273,7 @@ func (c *Client) rpc(ctx context.Context, method string, params any) (json.RawMe
 	return nil, errors.New("too many Crabrix protocol notifications")
 }
 
-var tools = map[string]bool{"crabrix_create": true, "crabrix_connect": true, "crabrix_status": true, "crabrix_snapshot": true, "crabrix_read_file": true, "crabrix_apply_changes": true, "crabrix_select": true, "crabrix_handoff": true, "crabrix_disconnect": true, "crabrix_end_room": true, "crabrix_runtime_clients": true, "crabrix_runtime_request": true, "crabrix_runtime_start": true, "crabrix_runtime_job": true, "crabrix_runtime_inspect": true, "crabrix_runtime_control": true}
+var tools = map[string]bool{"crabrix_create": true, "crabrix_connect": true, "crabrix_status": true, "crabrix_snapshot": true, "crabrix_read_file": true, "crabrix_apply_changes": true, "crabrix_select": true, "crabrix_plan_changes": true, "crabrix_apply_operations": true, "crabrix_handoff": true, "crabrix_disconnect": true, "crabrix_end_room": true, "crabrix_runtime_clients": true, "crabrix_runtime_request": true, "crabrix_runtime_start": true, "crabrix_runtime_job": true, "crabrix_runtime_inspect": true, "crabrix_runtime_control": true}
 
 // Call invokes one allowlisted room tool. Source and output remain untrusted data.
 func (c *Client) Call(ctx context.Context, name string, args any) (json.RawMessage, error) {
@@ -360,6 +360,18 @@ func (c *Client) Apply(ctx context.Context, options ApplyOptions) (json.RawMessa
 }
 func (c *Client) Select(ctx context.Context, path string, anchor, head int, revision string) (json.RawMessage, error) {
 	return c.Call(ctx, "crabrix_select", map[string]any{"path": path, "anchor": anchor, "head": head, "expectedRevision": revision})
+}
+
+// PlanChanges checks up to 32 file operations in a format 2 (stable file ID) room
+// without changing anything. It returns the plan, its revision and planHash.
+func (c *Client) PlanChanges(ctx context.Context, operations any) (json.RawMessage, error) {
+	return c.Call(ctx, "crabrix_plan_changes", map[string]any{"operations": operations})
+}
+
+// ApplyOperations applies a reviewed plan once. Retrying with the same operationID
+// and operations reports alreadyApplied instead of applying twice.
+func (c *Client) ApplyOperations(ctx context.Context, operations any, expectedRevision, planHash, operationID string) (json.RawMessage, error) {
+	return c.Call(ctx, "crabrix_apply_operations", map[string]any{"operations": operations, "expectedRevision": expectedRevision, "planHash": planHash, "operationId": operationID})
 }
 func (c *Client) Share(ctx context.Context, mode string) (Handoff, error) {
 	data, err := c.Call(ctx, "crabrix_handoff", map[string]string{"mode": mode})
