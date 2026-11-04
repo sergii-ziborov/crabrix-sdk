@@ -1,0 +1,17 @@
+{
+  "version": "0.5.0",
+  "date": "2026-11-04",
+  "jsTests": 83,
+  "rustUnitTests": 4,
+  "rustDoctests": 1,
+  "goTests": "passed, go vet clean",
+  "tools": 18,
+  "npmTarballSHA256": "d0f577b59d90bf74ee5bbd32abf76bc0e9f2ac83a167947e148f3620929b75eb",
+  "npmIntegrity": "sha512 recorded by npm matches the packed tarball",
+  "goProxy": "v0.5.0 listed by proxy.golang.org",
+  "cratesIo": "crabrix 0.5.0 published",
+  "localAgentLinks": "Against https://crabrix.com with crabrix@0.5.0 from npm (npx -y crabrix@0.5.0 over stdio, official MCP client): a person created a room with the library; an agent joined through the website agent link (key in the path) and another through the app form (key after #); both wrote a file the person read, and each handed off only its own link in the same form.",
+  "remoteMCP": "crabrix.com serves crabrix serve-http from the same tarball. A room created in the web Playground after its warning modal gave an agent link; the official MCP client connected to it as a Streamable HTTP server, read the room, wrote a file that appeared in the browser and was listed as Agent · Crabrix. The app form sent to the remote MCP returned 404 with the local-only message.",
+  "notRunForThisRelease": "Claude, Codex, Cursor and Grok clients themselves; the checks used the official MCP TypeScript client in their place. Runtime execution through a browser or the app, and the Rust and Go bindings against production. Their local suites passed.",
+  "mcpRegistry": "pending owner login"
+}
