@@ -1,9 +1,9 @@
 [package]
 name = "crabrix"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Rust SDK and MCP launcher for encrypted temporary Crabrix Playgrounds. Shared protocol core; Node.js 22+ required."
+description = "Rust SDK and MCP launcher for end-to-end encrypted, temporary Crabrix Playgrounds shared by AI agents and people. Node.js 22+ required."
 license = "MIT"
 repository = "https://github.com/sergii-ziborov/crabrix-sdk"
 homepage = "https://crabrix.com/playground/mcp/"

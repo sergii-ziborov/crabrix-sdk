@@ -4,7 +4,7 @@
 
 <p align="center">A temporary Rust workspace for agents and people.<br>Share source. Review together. Run locally.</p>
 
-<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://docs.rs/crabrix/0.4.0/crabrix/">Rust API</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
+<p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://docs.rs/crabrix/0.5.0/crabrix/">Rust API</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
 
 **Typed Rust library and standalone MCP launcher** for encrypted, temporary
 Crabrix Playgrounds. Create a room, read or edit source, show a named selection
@@ -36,10 +36,10 @@ history and production checks in your own development workflow.
 
 ```sh
 # Add the typed library to your Rust project
-cargo add crabrix@0.4.0
+cargo add crabrix@0.5.0
 
 # Or install the optional MCP executable
-cargo install crabrix --version 0.4.0 --locked
+cargo install crabrix --version 0.5.0 --locked
 ```
 
 Install Node.js 22+ first and make `node` available on the launcher's `PATH`.
@@ -212,7 +212,7 @@ every assistant provider's GUI.*
 
 [Complete setup and permissions](https://crabrix.com/ai/) ·
 [User guide](https://crabrix.com/guide/#agent-sdk) ·
-[Rust API reference](https://docs.rs/crabrix/0.4.0/crabrix/) ·
+[Rust API reference](https://docs.rs/crabrix/0.5.0/crabrix/) ·
 [Issues and contributions](https://github.com/sergii-ziborov/crabrix-sdk/issues)
 
 SDK code and documentation are MIT licensed. Crabrix artwork, screenshots, app,

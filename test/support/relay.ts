@@ -1,5 +1,5 @@
-// The site's relay routes at e04e9ff (site/app/api/playground/rooms/route.ts,
-// rooms/[id]/route.ts and rooms/[id]/events/route.ts) over loopback HTTP, with the
+// The site's relay routes (site/app/api/playground/rooms/route.ts, rooms/[id]/route.ts,
+// rooms/[id]/agent/route.ts and rooms/[id]/events/route.ts) over loopback HTTP, with the
 // real PlaygroundRooms class. It reports what clients actually sent.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { Readable } from "node:stream";
@@ -72,6 +72,10 @@ export async function startRelay(rooms = new PlaygroundRooms(), hooks: Hooks = {
         log.creates.push(value);
         const room = rooms.create(validatePacket(value.snapshot, snapshotLimit(codec)), Number(value.lifetimeSeconds), undefined, codec);
         res.statusCode = 201; res.end(JSON.stringify(room)); seen.status = 201; return;
+      }
+      if (url.pathname.endsWith("/agent/") || url.pathname.endsWith("/agent")) {
+        rooms.admit(id, access, seen.codecs);
+        res.end(JSON.stringify(rooms.agent(id, access))); seen.status = 200; return;
       }
       if (url.pathname.endsWith("/events/")) {
         rooms.admit(id, access, seen.codecs);

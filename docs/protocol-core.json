@@ -1,13 +1,13 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "sha256": {
-    "dist/cli.mjs": "2844aafdc0411210a67ab02febf8e101994bf053ebff19eb43ac15c7650a4dbc",
-    "crates/crabrix/runtime/bridge.mjs": "2844aafdc0411210a67ab02febf8e101994bf053ebff19eb43ac15c7650a4dbc",
-    "go/crabrix/runtime/bridge.mjs": "2844aafdc0411210a67ab02febf8e101994bf053ebff19eb43ac15c7650a4dbc"
+    "dist/cli.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8",
+    "crates/crabrix/runtime/bridge.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8",
+    "go/crabrix/runtime/bridge.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8"
   },
   "requires": "Node.js 22+",
   "source": "src/cli.ts and src/core",
-  "npmPackage": "crabrix@0.4.0",
+  "npmPackage": "crabrix@0.5.0",
   "documentFormats": [
     1,
     2
@@ -88,7 +88,7 @@
       },
       {
         "file": "test/support/rooms.ts",
-        "sha256": "208a23207236914ba44f69ceb78ec830b5ba7a7d0228dad156c7e65af25e1946",
+        "sha256": "6310c9c6749bb0b0c0860cd4b890dd00a427ad1ee6f74d9c9caed2454214e694",
         "site": "site/lib/playground-rooms.ts",
         "siteSHA256": "208a23207236914ba44f69ceb78ec830b5ba7a7d0228dad156c7e65af25e1946",
         "adaptations": "None. The real relay class, used behind loopback HTTP in tests."

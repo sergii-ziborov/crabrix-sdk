@@ -88,6 +88,25 @@ export function authorizedLink(input: string, origin = ORIGIN): PlaygroundLink {
   return link;
 }
 
+// An agent link reaches the same room as a person link, until the same expiry. Crabrix MCP
+// parses it and joins the room itself, so the key stays here. With the key in the path it is
+// also a remote MCP server URL. With the key after # (local), no HTTP client ever sends the
+// key, so only Crabrix MCP on the agent's computer can use it; the Crabrix app gives these.
+export type AgentLink = { id: string; access: string; key: string; local?: true };
+export function parseAgentLink(input: string, origin = ORIGIN): AgentLink | null {
+  let url: URL;
+  try { url = new URL(input); } catch { return null; }
+  if (url.origin !== origin || !url.pathname.startsWith("/mcp/")) return null;
+  const incomplete = () => new CrabrixError("INVALID_LINK", "This Crabrix agent link is incomplete. Copy the entire link.");
+  if (url.username || url.password || url.search || input.length > 1400) throw incomplete();
+  const remote = url.pathname.match(/^\/mcp\/([A-Za-z0-9_-]{24})\/([A-Za-z0-9_-]{43})\/([A-Za-z0-9_-]{43})\/?$/);
+  if (remote && !url.hash) return { id: remote[1], access: remote[2], key: remote[3] };
+  const local = url.pathname.match(/^\/mcp\/([A-Za-z0-9_-]{24})\/([A-Za-z0-9_-]{43})\/?$/), key = url.hash.match(/^#key=([A-Za-z0-9_-]{43})$/);
+  if (local && key) return { id: local[1], access: local[2], key: key[1], local: true };
+  throw incomplete();
+}
+export const agentLinkURL = (link: AgentLink, origin = ORIGIN) => link.local ? `${origin}/mcp/${link.id}/${link.access}#key=${link.key}` : `${origin}/mcp/${link.id}/${link.access}/${link.key}`;
+
 export class PlaygroundRoom {
   private session?: PlaygroundSession;
   private candidate?: PlaygroundSession;
@@ -98,6 +117,9 @@ export class PlaygroundRoom {
   private doc?: Y.Doc;
   private awareness?: ReturnType<typeof createPresence>;
   private viewAccess?: string;
+  // Joined through an agent link, which cannot produce other links.
+  /** The agent link this bridge joined through; it hands off only that link, in the same form. */
+  private agentJoined?: AgentLink;
   private queued = 0;
   private owner?: { id: string; access: string };
   private connection = "Disconnected";
@@ -126,7 +148,7 @@ export class PlaygroundRoom {
 
   async connect(input: string) {
     if (this.shutdown.signal.aborted) throw new CrabrixError("BRIDGE_CLOSED", "This MCP bridge is closed.");
-    const link = authorizedLink(input, this.origin), active = this.session;
+    const agent = parseAgentLink(input, this.origin), link = agent ? await this.resolveAgent(agent) : authorizedLink(input, this.origin), active = this.session;
     // Reconnecting to the current room keeps its peer slot, owner state and runtime controller.
     if (active && !active.stopped && this.runtime && sameLink(active.link, link)) return this.status();
     await this.settleBeforeSwitch();
@@ -165,8 +187,28 @@ export class PlaygroundRoom {
     this.release();
     // A new controller starts with no execution grant, even in the same room.
     this.doc = doc; this.awareness = awareness; this.session = session; this.runtime = runtime; this.connection = latest;
-    this.owner = owner; this.viewAccess = viewAccess;
+    this.owner = owner; this.viewAccess = viewAccess; this.agentJoined = agent ?? undefined;
     return this.status();
+  }
+
+  // The link carries no expiry or access, so the relay states them before joining.
+  private async resolveAgent(agent: AgentLink): Promise<PlaygroundLink> {
+    let value: Record<string, any>;
+    try {
+      value = await this.json(await fetch(this.origin + "/api/playground/rooms/" + agent.id + "/", { method: "GET", redirect: "error", cache: "no-store", signal: AbortSignal.any([AbortSignal.timeout(15_000), this.shutdown.signal]),
+        headers: { Authorization: "Bearer " + agent.access, "X-Crabrix-Codecs": CLIENT_CODECS } }));
+    } catch (error) { throw this.joinFailure(error) ?? toCrabrixError(error); }
+    if (!Number.isSafeInteger(value.expiresAt)) throw new CrabrixError("INVALID_LINK", "This Crabrix agent link is unavailable or expired.");
+    if (value.expiresAt <= Date.now()) throw new CrabrixError("ROOM_EXPIRED", "This Playground link is unavailable or expired.");
+    return { id: agent.id, key: agent.key, access: agent.access, expiresAt: value.expiresAt, mode: value.mode === "view" ? "view" : "edit" };
+  }
+
+  // The agent capability of a person link, with the same access and expiry.
+  private async agentAccess(id: string, access: string): Promise<string> {
+    const value = await this.json(await fetch(this.origin + "/api/playground/rooms/" + id + "/agent/", { method: "GET", redirect: "error", cache: "no-store", signal: AbortSignal.any([AbortSignal.timeout(15_000), this.shutdown.signal]),
+      headers: { Authorization: "Bearer " + access, "X-Crabrix-Codecs": CLIENT_CODECS } }));
+    if (typeof value.access !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(value.access)) throw new Error("Invalid agent capability.");
+    return value.access;
   }
 
   private joinFailure(failure: unknown): CrabrixError | null {
@@ -278,11 +320,25 @@ export class PlaygroundRoom {
       const requested = mode ?? session.link.mode;
       if (requested !== "edit" && requested !== "view") throw new CrabrixError("INVALID_ARGUMENT", "Choose edit or view access.");
       if (requested === "edit" && session.link.mode === "view") throw new CrabrixError("ACCESS_DENIED", "A view link cannot grant edit access.");
+      const expiresAt = new Date(state.expiresAt).toISOString(), execution = "No code is executed by opening or handing off this link.";
+      if (this.agentJoined) {
+        if (requested !== session.link.mode) throw new CrabrixError("ACCESS_DENIED", "An agent link can hand off only itself. Ask a person in the room for other access.");
+        const link = agentLinkURL(this.agentJoined, this.origin);
+        return { schema: "crabrix-handoff-v1", linkType: "temporary " + requested + " Playground agent link", link, agentLink: link, expiresAt, revision: view.revision, mode: requested, execution,
+          note: this.agentJoined.local
+            ? "This link is for AI agents with Crabrix MCP on their own computer. It does not work as a remote MCP server. People need a person link from someone in the room."
+            : "This link is for AI agents: add it as a remote MCP server, or give it to an agent with Crabrix MCP. People need a person link from someone in the room.",
+          warning: "Secret capability link: share only with intended agents. It grants source access until expiry. This is not a Git repository or durable backup." };
+      }
       const access = requested === "view" && session.link.mode !== "view" ? this.viewAccess : session.link.access;
       if (!access) throw new CrabrixError("ACCESS_DENIED", "Only the room creator can supply a separate view capability. Ask its creator for the view link.");
-      return { schema: "crabrix-handoff-v1", linkType: "temporary " + requested + " Playground", link: playgroundLink({ ...session.link, access, mode: requested }, this.origin),
-        expiresAt: new Date(state.expiresAt).toISOString(), revision: view.revision, mode: requested, execution: "No code is executed by opening or handing off this link.",
-        warning: "Secret capability link: share only with intended agents or people. It grants source access until expiry. This is not a Git repository or durable backup." };
+      // A relay from before agent links has none to give; the person link still works with Crabrix MCP.
+      const agentAccess = await this.agentAccess(session.link.id, access).catch(() => undefined);
+      const agent = agentAccess ? agentLinkURL({ id: session.link.id, access: agentAccess, key: session.link.key }, this.origin) : undefined;
+      return { schema: "crabrix-handoff-v1", linkType: "temporary " + requested + " Playground", link: playgroundLink({ ...session.link, access, mode: requested }, this.origin), ...(agent ? { agentLink: agent } : {}),
+        expiresAt, revision: view.revision, mode: requested, execution,
+        note: "Give people link: it opens in the browser or Crabrix. Give agents agentLink: it is a remote MCP server URL, and Crabrix MCP joins it directly. Both expire with the room.",
+        warning: "Secret capability links: share only with intended agents or people. They grant source access until expiry. This is not a Git repository or durable backup." };
     });
   }
 
@@ -517,7 +573,7 @@ export class PlaygroundRoom {
   private release() {
     this.runtime?.close(); this.runtime = undefined;
     this.session?.stop(); this.awareness?.destroy(); this.doc?.destroy();
-    this.session = undefined; this.awareness = undefined; this.doc = undefined; this.owner = undefined; this.viewAccess = undefined;
+    this.session = undefined; this.awareness = undefined; this.doc = undefined; this.owner = undefined; this.viewAccess = undefined; this.agentJoined = undefined;
     this.unresolved = undefined; this.lastOperation = undefined;
   }
   disconnect() {

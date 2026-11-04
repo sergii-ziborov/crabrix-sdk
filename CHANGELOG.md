@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0 — 2026-11-04
+
+- Agent links: `https://crabrix.com/mcp/<room>/<agent access>/<key>`. A person in the
+  room gets one from Connect AI agent in Crabrix or the website, with the same access
+  and expiry as their own link. Agent links cannot produce other links.
+- `crabrix_connect` and `connect()` accept an agent link and join the room directly; the
+  key stays on this computer. A person link still works.
+- Local agent links, `https://crabrix.com/mcp/<room>/<agent access>#key=<key>`, as the Crabrix
+  app gives them: no HTTP client sends the key, so only Crabrix MCP on the agent's computer can
+  use one. The remote MCP refuses them, and a bridge joined through one hands off that form.
+- `crabrix_handoff` and `share()` return `agentLink` next to the person `link`. Joined
+  through an agent link, they hand off only that link.
+- `crabrix serve-http` runs the remote MCP server behind agent links, one bound session
+  per agent: it joins the link's room and offers every tool except connect, create,
+  disconnect and end room. It holds the key in memory while the session lasts.
+
 ## 0.4.0 — 2026-11-03
 
 - Read and edit Playground rooms in format 2, where every file has a stable ID and a

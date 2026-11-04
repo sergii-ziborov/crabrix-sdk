@@ -1,6 +1,6 @@
 <p align="center"><img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/crabrix.png" alt="Crabrix crab" width="96"></p>
 <h1 align="center">Crabrix 🦀</h1>
-<p align="center">A temporary Rust workspace for agents and people.<br>Share a link. Edit together. Run locally in a browser or Crabrix.</p>
+<p align="center">An end-to-end encrypted, temporary Rust workspace for AI agents and people.<br>Share a link. Edit together. Run locally in a browser or Crabrix.</p>
 <p align="center"><a href="https://crabrix.com/playground/">Open Playground</a> · <a href="https://crabrix.com/ai/">Setup & guide</a> · <a href="https://github.com/sergii-ziborov/crabrix-sdk">GitHub</a></p>
 
 Crabrix is a JavaScript/TypeScript library **and** a standalone MCP server.
@@ -11,13 +11,35 @@ an optional companion for iPhone/iPad and offline Rust projects.
 
 See the [practical two-agent walkthrough](https://crabrix.com/blog/crabrix-mcp-two-agents-local-rust-workflows/)
 for development, interviews and teaching, including actual local Run/Debug and
-permission checks. [Release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.3.5.json) and
-[public distribution receipts](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/publication-0.3.2.json) state the tested scope.
+permission checks. The [0.5.0 release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.5.0.json)
+states what was tested against production.
 
 <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/agents-workspace.webp" alt="Orange Crabrix crab between an implementation agent, a review agent and a person at one shared workspace" width="760">
 
 *Illustration of a shared development and review workflow. Real editor captures
 appear below.*
+
+## Why Crabrix
+
+- **Encrypted before it leaves your device.** Every room is encrypted with AES-256-GCM
+  on the client. The key lives after `#` in the link, a part that browsers and HTTP
+  clients never send. The relay forwards and briefly keeps only ciphertext, in memory,
+  and forgets it when the room ends. There is no account and no project storage.
+- **People and agents get their own links.** Share gives people a link that opens the
+  live editor in the browser or the Crabrix app. Connect AI gives an agent its own link,
+  with the same access (edit or view only) and the same expiry. An agent link cannot be
+  turned into other links.
+- **Works with the agents you use.** Claude Code, Codex and Cursor join through Crabrix
+  MCP on your computer, so the key never leaves it. Claude, Grok and other clients with
+  remote MCP can add the agent link as a server URL with nothing to install.
+- **Code runs on your device, only when you allow it.** The relay never compiles or
+  runs code. Run and Debug happen in the browser or the Crabrix app, and an agent can
+  start them only after a person approves that device, for at most ten minutes.
+- **Safe to hand off.** Every edit names the revision it was based on, so a stale edit is
+  refused instead of overwriting someone's work. Everyone in the room sees each
+  participant's name, cursor and selection.
+- **Temporary by design.** A room lives one to 24 hours. Save a copy when you need it;
+  Crabrix is not a repository.
 
 ## What can you do with it?
 
@@ -33,7 +55,7 @@ appear below.*
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.4.0
+npx -y crabrix@0.5.0
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -80,16 +102,54 @@ cannot invent a view capability, and view access cannot become edit access.
 
 ## Use through MCP
 
-Install one integration, once. Crabrix MCP is the server named `crabrix` from the npm package `crabrix`.
+Crabrix MCP is the server named `crabrix` from the npm package `crabrix`. A room has two
+kinds of links, and both end with the room:
 
-| Your client | Recommended install | Do not also |
+| Link | Looks like | For |
 | --- | --- | --- |
-| Claude Code | The plugin below. It already registers the MCP server and adds a skill. | Run `claude mcp add` or a global npm install. |
-| Another client with local stdio MCP | The JSON config below, using Node.js 22+. | Add a second Crabrix entry or the plugin. |
-| A client with only remote HTTP MCP | Not supported yet: this server speaks stdio. | Expect a URL to work. |
+| Person link | `https://crabrix.com/playground/room/<room>/#key=…` | People: opens the live editor in the browser or the Crabrix app. |
+| Agent link | `https://crabrix.com/mcp/<room>/<access>/<key>` | Agents, from Connect AI on crabrix.com: Crabrix MCP, or a remote MCP server URL. |
+| Local agent link | `https://crabrix.com/mcp/<room>/<access>#key=<key>` | Agents with Crabrix MCP only, from the Crabrix app. The key never reaches a server. |
+
+Anyone in the room gets an agent link for their own access from Connect AI on the website
+or in the app, and `crabrix_handoff` returns one next to the person link.
+
+### Way 1: Crabrix MCP on your computer (end-to-end)
+
+Install Crabrix MCP once, then paste an agent link (or a person link) into the chat and ask
+the agent to work in that room. The agent calls `crabrix_connect`, decrypts the room on your
+computer and joins it as a named participant. It can also create a room itself with
+`crabrix_create` and give you the link to open in the browser or on your phone.
+
+| Your client | Install once | Do not also |
+| --- | --- | --- |
+| Claude Code | The [plugin](#claude-code-plugin). It registers the server and adds a handoff skill. | Run `claude mcp add` or a global npm install. |
+| Codex | `codex mcp add crabrix -- npx -y crabrix@0.5.0` | Add a second Crabrix entry. |
+| Cursor | The [JSON config](#any-client-with-local-stdio-mcp) in `~/.cursor/mcp.json`. | Add a second Crabrix entry. |
+| Another client with local stdio MCP | The same JSON config, using Node.js 22+. | Add the plugin as well. |
 | Your own application | The JavaScript, Rust or Go library. | Run a separate MCP server for it. |
 
-Check a setup with `crabrix doctor`, or `npx -y crabrix@0.4.0 doctor`. It reports the
+### Way 2: Remote MCP, nothing to install
+
+In the [web Playground](https://crabrix.com/playground/), choose **Connect AI**, pick your
+agent and follow its steps; the agent link is filled into every command.
+
+| Your client | Add the agent link as a remote MCP server |
+| --- | --- |
+| Claude (claude.ai, desktop, mobile) | Customize → Connectors → **+** → Add custom connector, then paste the agent link. |
+| Claude Code | `claude mcp add --transport http crabrix-room <agent link>` |
+| Codex | `codex mcp add crabrix-room --url <agent link>` |
+| Cursor | **Add to Cursor** in Connect AI, or `{ "mcpServers": { "crabrix-room": { "url": "<agent link>" } } }` in `~/.cursor/mcp.json` |
+| Grok (grok.com) | Connectors → New connector → Custom, then paste the agent link. Custom connectors may need a paid plan. |
+| Any other client | Streamable HTTP, no sign-in. |
+
+The trade-off is stated before the link is shown: while an agent is connected this way,
+Crabrix's server decrypts that room in memory to serve it. It logs nothing, stores
+nothing and cannot run code, and the session ends when the agent disconnects, after 30
+idle minutes or with the room. The Crabrix app gives only local agent links, which this
+path refuses. To keep the key off every server, use Way 1.
+
+Check a setup with `crabrix doctor`, or `npx -y crabrix@0.5.0 doctor`. It reports the
 version, Node, DNS, TLS, relay reachability and proxy variables. It opens no room,
 reads no source and changes no setting; add `--json` for a machine-readable report.
 
@@ -104,7 +164,7 @@ its single registration with the config below, and remove a global copy with
 /plugin install crabrix@crabrix
 ```
 
-The plugin starts `npx -y crabrix@0.4.0` and adds a `crabrix-handoff` skill for sharing,
+The plugin starts `npx -y crabrix@0.5.0` and adds a `crabrix-handoff` skill for sharing,
 reviewing and running Rust. It needs Node.js 22+. Outside a session, use
 `claude plugin marketplace add` and `claude plugin install` with the same arguments.
 
@@ -113,13 +173,13 @@ reviewing and running Rust. It needs Node.js 22+. Outside a session, use
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.4.0"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.5.0"] }
   }
 }
 ```
 
 In Claude Code without the plugin, the equivalent is
-`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.4.0`.
+`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.5.0`.
 
 Ask your assistant to create a Playground, then open its complete private link.
 The MCP server exposes eighteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
@@ -129,7 +189,8 @@ The MCP server exposes eighteen tools: `crabrix_create`, `crabrix_connect`, `cra
 `crabrix_runtime_request`, `crabrix_runtime_start`, `crabrix_runtime_inspect` (read-only),
 `crabrix_runtime_control` and `crabrix_runtime_job` (the earlier combined form).
 Stdio stdout contains only MCP messages; help/version output is explicitly
-requested.
+requested. `crabrix serve-http [--port 8090] [--host 127.0.0.1]` runs the remote MCP
+behind agent links, as crabrix.com does, for use behind your own TLS proxy.
 
 A refused call keeps its readable text and `isError`, and adds
 `structuredContent: { ok: false, error: { code, message, retryable, action }, requestId }`.
@@ -227,14 +288,14 @@ certify every browser. A room link alone never grants execution permission.*
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.4.0/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.5.0/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.4.0
-cargo install crabrix --version 0.4.0 --locked
+cargo add crabrix@0.5.0
+cargo install crabrix --version 0.5.0 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix

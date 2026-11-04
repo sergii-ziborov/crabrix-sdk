@@ -7,8 +7,8 @@ Requires **Node.js 22+**. The same bundled protocol core is embedded; no npm
 installation is needed. A browser or another agent can join without a phone app.
 
 ```sh
-go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix@v0.4.0
-go install github.com/sergii-ziborov/crabrix-sdk/go/crabrix/cmd/crabrix@v0.4.0
+go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix@v0.5.0
+go install github.com/sergii-ziborov/crabrix-sdk/go/crabrix/cmd/crabrix@v0.5.0
 ```
 
 ```go

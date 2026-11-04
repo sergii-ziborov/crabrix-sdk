@@ -25,7 +25,7 @@ export type PlanSummary = {created:FileTouch[];written:FileTouch[];moved:{id:str
   metadata:{name?:string;edition?:'2021'|'2024';entryFile?:string};checkSuggested:boolean;after:{entryFile:string;blocked:BlockedReason[];files:(FileTouch&{bytes:number})[];recovery:number}};
 export type PlanResult = PlanSummary & {format:2;revision:string;planHash:string;operations:number;note:string};
 export type OperationsResult = {format:2;alreadyApplied:boolean;changed:boolean;revision:string;operationId:string;acknowledgedSequence?:number;note:string} & Partial<PlanSummary>;
-export type Handoff = {schema:string;linkType:string;link:string;expiresAt:string;revision:string;mode:'edit'|'view';execution:string;warning:string};
+export type Handoff = {schema:string;linkType:string;link:string;agentLink?:string;note:string;expiresAt:string;revision:string;mode:'edit'|'view';execution:string;warning:string};
 export type RuntimeOperation = 'discover'|'grant'|'check'|'build'|'run'|'debug'|'step'|'continue'|'stop'|'status'|'stdout'|'stderr'|'diagnostics'|'locals'|'breakpoints'|'revoke';
 export type RuntimeClients = {controller:string;warnings:string[];source:{revision:string;paths:string[]};clients:{fingerprint:string;revision:string;expires:number;name:string;profile:string;operations:string[];ready:boolean;busy:boolean;permissions:string;editConfirmed:boolean;grant?:{id:string;expires:number;operations:string[]}|null;job?:{id:string;requestID:string;operation:string;state:string}}[];execution:string};
 export type RuntimeResult = Record<string,unknown>;
