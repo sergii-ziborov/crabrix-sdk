@@ -4,7 +4,8 @@
 // Nothing is written to disk or logged; a session ends on DELETE, when idle, or when the room expires.
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/server";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
-import { makeServer } from "./server.js";
+import { makeAcademyServer, makeServer } from "./server.js";
+import { AcademyClient } from "./academy.js";
 import { PlaygroundRoom, agentLinkURL, parseAgentLink } from "./room.js";
 import { toCrabrixError } from "./errors.js";
 
@@ -15,6 +16,10 @@ export type RemoteOptions = {
   relay?: string;
   maxSessions?: number;
   idleMs?: number;
+  /** Where the read-only Academy API is fetched from (default: CRABRIX_ACADEMY_ORIGIN, then origin). */
+  academyOrigin?: string;
+  /** Concurrent /mcp/academy requests, kept apart from room sessions. */
+  maxAcademyRequests?: number;
 };
 type Session = { transport: WebStandardStreamableHTTPServerTransport; room: PlaygroundRoom; link: Buffer; used: number; expiresAt: number };
 
@@ -26,6 +31,27 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
   const maxSessions = options.maxSessions ?? 64, idleMs = options.idleMs ?? 30 * 60_000;
   const sessions = new Map<string, Session>();
   let opening = 0;
+  // Public, read-only Academy MCP: stateless, no room, no key. Its own small limit
+  // keeps lesson traffic from taking capacity that agent-link sessions need.
+  const academy = new AcademyClient({ origin: options.academyOrigin ?? process.env.CRABRIX_ACADEMY_ORIGIN ?? origin });
+  const maxAcademy = options.maxAcademyRequests ?? 16;
+  let academyInFlight = 0;
+  async function handleAcademy(request: Request): Promise<Response> {
+    if (request.method !== "POST") return Response.json({ jsonrpc: "2.0", error: { code: -32000, message: "Crabrix Academy MCP is stateless: send JSON-RPC requests with POST." }, id: null }, { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } });
+    if (academyInFlight >= maxAcademy) return jsonError(503, "Crabrix Academy MCP is busy. Retry shortly.");
+    academyInFlight++;
+    try {
+      const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+      const server = makeAcademyServer(academy);
+      await server.connect(transport);
+      const response = await transport.handleRequest(request);
+      const body = await response.text();
+      void server.close().catch(() => {});
+      return new Response(body, { status: response.status, headers: response.headers });
+    } catch {
+      return jsonError(500, "Crabrix Academy MCP could not handle this request.");
+    } finally { academyInFlight--; }
+  }
 
   const end = (id: string) => {
     const session = sessions.get(id);
@@ -42,6 +68,7 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
 
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (/^\/mcp\/academy\/?$/.test(url.pathname) && !url.search) return handleAcademy(request);
     // The path is the capability. It is compared as a hash and never echoed.
     let parsed;
     try { parsed = parseAgentLink(origin + url.pathname, origin); } catch { parsed = null; }

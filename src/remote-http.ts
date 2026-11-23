@@ -4,8 +4,8 @@ import { createRemoteHandler } from "./remote.js";
 
 // Node's HTTP server in front of the Web-standard handler. The URL holds the agent
 // capability, so requests are never logged.
-export async function serveHTTP(options: { port: number; host: string; relay?: string; origin?: string }) {
-  const remote = createRemoteHandler({ origin: options.origin, relay: options.relay });
+export async function serveHTTP(options: { port: number; host: string; relay?: string; origin?: string; academyOrigin?: string }) {
+  const remote = createRemoteHandler({ origin: options.origin, relay: options.relay, academyOrigin: options.academyOrigin });
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     try {
       if (req.url === "/healthz") { res.end(JSON.stringify({ ok: true, sessions: remote.sessions })); return; }

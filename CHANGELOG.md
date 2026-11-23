@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased — Learn Rust with Crabrix Academy
+
+- Ten read-only `crabrix_academy_*` tools over the public Crabrix Academy API
+  (`https://crabrix.com/api/academy/v1`): catalog, search, get_lesson (summary / teaching /
+  full), get_exercise, get_hint (levels 1–5; 5 only with `revealSolution`), learning_path,
+  get_examples, open_playground, review_attempt (never "verified") and next. Plus the
+  `crabrix://academy/teaching-contract` and `crabrix://academy/paths` resources and the
+  `learn_rust_with_crabrix` and `continue_crabrix_learning` prompts.
+- `crabrix academy` serves only these over stdio; `crabrix serve-http` also answers
+  stateless, read-only Academy MCP at `/mcp/academy` with its own concurrency limit.
+  `makeServer(room, { academy: true })` adds them to a local unbound server and
+  `makeAcademyServer()` builds the Academy-only server.
+- Additive only: the default `crabrix` server, agent-link sessions, room tools, prompts,
+  resources and error codes are unchanged. New error codes: `ACADEMY_NOT_FOUND`,
+  `ACADEMY_UNAVAILABLE`. The Claude Code plugin registers `crabrix-academy` beside
+  `crabrix`, and ships a new `crabrix-learn-rust` skill; `crabrix-handoff` is unchanged.
+- No tool sends source code, room links or progress to Crabrix; paths and next steps mark
+  progress only from ids the caller supplies.
+
 ## 0.5.0 — 2026-11-04
 
 - Agent links: `https://crabrix.com/mcp/<room>/<agent access>/<key>`. A person in the

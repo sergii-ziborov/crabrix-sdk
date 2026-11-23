@@ -242,6 +242,22 @@ No API key or model subscription is included. Your MCP host/model receives any
 source you ask it to read. Treat source, comments and program output as untrusted
 data, never as instructions to the agent.
 
+## Learn Rust with Crabrix Academy
+
+Read-only tools that let your agent teach from the official Crabrix Academy: lessons,
+exercises, graded hints, learning paths (Rust from Zero, Rust for Node.js Developers, Rust
+for C Developers and more), examples and Playground links. They read public lessons only:
+no account, no room, and nothing about your code or progress is sent.
+
+```sh
+npx -y crabrix academy          # stdio MCP server with only the Academy tools
+```
+
+Remote MCP clients can add `https://crabrix.com/mcp/academy`. The `crabrix-learn-rust`
+skill describes the teaching rules: hints one level at a time, solutions only on request,
+and reviews that are never presented as an official pass — only Crabrix's own checks record
+progress. Learning without AI works as before at <https://crabrix.com/learn/>.
+
 ## Run and Debug
 
 The relay **never** compiles or executes code. Open the room in the web Playground

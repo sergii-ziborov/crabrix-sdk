@@ -7,7 +7,8 @@ export type ErrorCode =
   | "ACCESS_DENIED" | "READ_ONLY" | "REVISION_CONFLICT" | "PATH_CONFLICT" | "LIMIT_EXCEEDED" | "RATE_LIMITED" | "BRIDGE_CLOSED"
   | "NETWORK_UNREACHABLE" | "TLS_ERROR" | "PROXY_ERROR" | "JOIN_TIMEOUT" | "RELAY_CONFLICT" | "RELAY_UNAVAILABLE"
   | "RUNTIME_GRANT_REQUIRED" | "RUNTIME_UNAVAILABLE" | "OUTCOME_UNKNOWN" | "OPERATION_FAILED"
-  | "CLIENT_UPDATE_REQUIRED" | "UNSUPPORTED_ROOM_FORMAT" | "PLAN_CHANGED" | "OPERATION_ID_CONFLICT" | "RECOVERY_FULL" | "PROJECT_BLOCKED";
+  | "CLIENT_UPDATE_REQUIRED" | "UNSUPPORTED_ROOM_FORMAT" | "PLAN_CHANGED" | "OPERATION_ID_CONFLICT" | "RECOVERY_FULL" | "PROJECT_BLOCKED"
+  | "ACADEMY_NOT_FOUND" | "ACADEMY_UNAVAILABLE";
 
 const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   INVALID_LINK: { retryable: false, action: "check_link" },
@@ -39,6 +40,8 @@ const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   OPERATION_ID_CONFLICT: { retryable: false, action: "use_new_operation_id" },
   RECOVERY_FULL: { retryable: false, action: "clear_recovery" },
   PROJECT_BLOCKED: { retryable: false, action: "fix_project" },
+  ACADEMY_NOT_FOUND: { retryable: false, action: "check_ids" },
+  ACADEMY_UNAVAILABLE: { retryable: true, action: "wait_and_retry" },
 };
 
 export class CrabrixError extends Error {

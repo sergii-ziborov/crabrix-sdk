@@ -15,7 +15,8 @@ const MCP_NAME = "io.github.sergii-ziborov/crabrix", TESTED_PROTOCOLS = ["2025-1
 if (packageInfo.mcpName !== MCP_NAME) throw new Error("package.json mcpName must match the MCP Registry name.");
 const writeJSON = (file, value) => writeFile(path.join(root, file), JSON.stringify(value, null, 2) + "\n");
 const npxArgs = ["-y", `crabrix@${packageInfo.version}`];
-await writeJSON(".mcp.json", { mcpServers: { crabrix: { command: "npx", args: npxArgs } } });
+// crabrix-academy is additive: the existing crabrix registration is unchanged.
+await writeJSON(".mcp.json", { mcpServers: { crabrix: { command: "npx", args: npxArgs }, "crabrix-academy": { command: "npx", args: [...npxArgs, "academy"] } } });
 const plugin = JSON.parse(await readFile(path.join(root, ".claude-plugin/plugin.json"), "utf8"));
 await writeJSON(".claude-plugin/plugin.json", { ...plugin, version: packageInfo.version });
 await writeJSON("server.json", {
@@ -34,7 +35,7 @@ await chmod(path.join(root, "dist/cli.mjs"), 0o755);
 const library = await build({absWorkingDir:root,entryPoints:["src/runtime-entry.ts"],outfile:"dist/implementation.cjs",bundle:true,platform:"node",target:"node22",format:"cjs",metafile:true});
 await writeFile(path.join(root,"dist/index.cjs"),'const core = require("./implementation.cjs"); module.exports = { Crabrix: core.Crabrix, CrabrixError: core.CrabrixError, PLAYGROUND_LIMITS: core.PLAYGROUND_LIMITS };\n');
 await writeFile(path.join(root,"dist/index.mjs"),'import core from "./implementation.cjs"; export const Crabrix = core.Crabrix; export const CrabrixError = core.CrabrixError; export const PLAYGROUND_LIMITS = core.PLAYGROUND_LIMITS;\n');
-await writeFile(path.join(root,"dist/server.mjs"),'import core from "./implementation.cjs"; export const makeServer = core.makeServer;\n');
+await writeFile(path.join(root,"dist/server.mjs"),'import core from "./implementation.cjs"; export const makeServer = core.makeServer; export const makeAcademyServer = core.makeAcademyServer;\n');
 execFileSync(process.execPath,["node_modules/typescript/bin/tsc","--noEmit","false","--declaration","--emitDeclarationOnly","--outDir","dist","--rootDir","src"],{cwd:root,stdio:"inherit"});
 const packages = new Map();
 const bundledInputs = new Set([...Object.keys(result.metafile.inputs), ...Object.keys(library.metafile.inputs)]);

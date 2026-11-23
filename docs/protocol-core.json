@@ -1,9 +1,9 @@
 {
   "version": "0.5.0",
   "sha256": {
-    "dist/cli.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8",
-    "crates/crabrix/runtime/bridge.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8",
-    "go/crabrix/runtime/bridge.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8"
+    "dist/cli.mjs": "00a4d83f54bd99901c2d8bbfe9b19b6575d5377d1d48a5dc31c0293169e9972c",
+    "crates/crabrix/runtime/bridge.mjs": "00a4d83f54bd99901c2d8bbfe9b19b6575d5377d1d48a5dc31c0293169e9972c",
+    "go/crabrix/runtime/bridge.mjs": "00a4d83f54bd99901c2d8bbfe9b19b6575d5377d1d48a5dc31c0293169e9972c"
   },
   "requires": "Node.js 22+",
   "source": "src/cli.ts and src/core",

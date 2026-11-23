@@ -57,3 +57,12 @@ URL, plaintext user project, auth configuration or token. A participant name and
 a reported output card are not attestations. These checks do not establish
 physical-device timings, arbitrary Cargo compatibility or a live model-provider
 conversation.
+
+## Crabrix Academy tools
+
+`test/academy.test.ts` serves `test/fixtures/academy-v1.json` (a subset of the public
+Academy API v1) from a local HTTP server with ETag/304 support and checks every
+`crabrix_academy_*` tool, the stdio `crabrix academy` server, the remote `/mcp/academy`
+route, and that the default and agent-link tool lists are unchanged. Regenerate the fixture
+from the website corpus with
+`node test/support/make-academy-fixture.mjs <site/content/courses.json> <crabrix-courses>`.
