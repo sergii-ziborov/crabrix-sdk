@@ -2,7 +2,7 @@
   "name": "crabrix",
   "mcpName": "io.github.sergii-ziborov/crabrix",
   "version": "0.6.0",
-  "description": "End-to-end encrypted, temporary Rust Playgrounds for AI agents and people: MCP server, agent links, remote MCP, JavaScript SDK and permissioned local Run/Debug.",
+  "description": "Learn Rust with your AI agent from Crabrix Academy, and share end-to-end encrypted Rust Playgrounds with agents and people: MCP server, agent links, remote MCP, JavaScript SDK and permissioned local Run/Debug.",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -76,6 +76,8 @@
     "end-to-end-encryption",
     "live-coding",
     "coding-interviews",
+    "learn-rust",
+    "rust-tutorial",
     "rust-learning",
     "remote-mcp",
     "codex",

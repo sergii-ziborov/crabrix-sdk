@@ -21,7 +21,7 @@ const plugin = JSON.parse(await readFile(path.join(root, ".claude-plugin/plugin.
 await writeJSON(".claude-plugin/plugin.json", { ...plugin, version: packageInfo.version });
 await writeJSON("server.json", {
   $schema: "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  name: MCP_NAME, title: "Crabrix", description: "Temporary encrypted Rust Playgrounds shared by agents and people, with permissioned local Run/Debug.",
+  name: MCP_NAME, title: "Crabrix", description: "Rust lessons from Crabrix Academy and encrypted Rust Playgrounds shared by agents and people.",
   websiteUrl: "https://crabrix.com/ai/", repository: { url: "https://github.com/sergii-ziborov/crabrix-sdk", source: "github" }, version: packageInfo.version,
   packages: [{ registryType: "npm", registryBaseUrl: "https://registry.npmjs.org", identifier: "crabrix", version: packageInfo.version, runtimeHint: "npx", transport: { type: "stdio" } }],
 });

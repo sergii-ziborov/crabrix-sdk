@@ -4,12 +4,12 @@
     "name": "Sergii Ziborov",
     "url": "https://crabrix.com/about/"
   },
-  "description": "Crabrix tools for shared Rust work between agents and people.",
+  "description": "Crabrix tools for learning Rust and for shared Rust work between agents and people.",
   "plugins": [
     {
       "name": "crabrix",
       "source": "./",
-      "description": "End-to-end encrypted, temporary Rust Playgrounds for agents and people: agent links, live shared editing, and Run/Debug on your device only when you allow it."
+      "description": "Learn Rust with Crabrix Academy through your agent, and share end-to-end encrypted Rust Playgrounds: agent links, live shared editing, and Run/Debug on your device only when you allow it."
     }
   ]
 }
