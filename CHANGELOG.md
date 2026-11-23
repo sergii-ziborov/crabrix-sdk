@@ -1,39 +1,46 @@
 # Changelog
 
-## Unreleased — Learn Rust with Crabrix Academy
+## 0.6.0 — 2026-11-24
 
-- Ten read-only `crabrix_academy_*` tools over the public Crabrix Academy API
+Learn Rust with Crabrix Academy over MCP. Everything is additive: the default `crabrix`
+server keeps its eighteen tools, agent-link sessions, room tools, prompts and resources are
+unchanged, and no tool sends source code, room links or progress to Crabrix.
+
+- Twelve read-only `crabrix_academy_*` tools over the public Crabrix Academy API
   (`https://crabrix.com/api/academy/v1`): catalog, search, get_lesson (summary / teaching /
   full), get_exercise, get_hint (levels 1–5; 5 only with `revealSolution`), learning_path,
-  get_examples, open_playground, review_attempt (never "verified") and next. Plus the
-  `crabrix://academy/teaching-contract` and `crabrix://academy/paths` resources and the
-  `learn_rust_with_crabrix` and `continue_crabrix_learning` prompts.
-- `crabrix academy` serves only these over stdio; `crabrix serve-http` also answers
-  stateless, read-only Academy MCP at `/mcp/academy` with its own concurrency limit.
-  `makeServer(room, { academy: true })` adds them to a local unbound server and
-  `makeAcademyServer()` builds the Academy-only server.
-- Additive only: the default `crabrix` server, agent-link sessions, room tools, prompts,
-  resources and error codes are unchanged. New error codes: `ACADEMY_NOT_FOUND`,
-  `ACADEMY_UNAVAILABLE`. The Claude Code plugin registers `crabrix-academy` beside
-  `crabrix`, and ships a new `crabrix-learn-rust` skill; `crabrix-handoff` is unchanged.
-- No tool sends source code, room links or progress to Crabrix; paths and next steps mark
-  progress only from ids the caller supplies or an AI Learning State the caller passes.
-- AI Learning State v1 (`crabrix.ai-learning-state`): `crabrix_academy_learning_state`
-  (template / validate / merge / summarize; pure, local and remote) and, on the local
-  `crabrix academy` stdio server only, `crabrix_academy_import_progress_backup`, which reads a
-  `.crabrixprogress` file the learner names (read-only, ≤ 5 MiB, checksum and size checked,
-  only completed and credited lesson ids used). The merge only ever adds official progress.
-- `crabrix_academy_next` and `crabrix_academy_learning_path` take an optional `learningState`;
-  `progressSource` names the learner's copy. Without it their output is unchanged.
-- Lesson and Playground links on crabrix.com returned by the Academy tools carry `via=ai`.
-  Playground links pass through the API's `kind` (`lesson-project`, `practice-copy`,
-  `algorithm-trace`; `example-copy` for a single example's new `playground` link).
+  get_examples, open_playground, review_attempt (never "verified"), next, learning_state and,
+  locally only, import_progress_backup. Plus the `crabrix://academy/teaching-contract` and
+  `crabrix://academy/paths` resources and the `learn_rust_with_crabrix` and
+  `continue_crabrix_learning` prompts. New error codes: `ACADEMY_NOT_FOUND`, `ACADEMY_UNAVAILABLE`.
+- `crabrix academy` serves only the Academy over stdio. `crabrix serve-http` also answers
+  stateless, read-only Academy MCP at `/mcp/academy` (as `https://crabrix.com/mcp/academy`),
+  matched before agent links and with its own concurrency limit. `makeServer(room, { academy: true })`
+  adds the tools to a local unbound server; `makeAcademyServer()` builds the Academy-only server.
+- The Claude Code plugin registers `crabrix-academy` beside `crabrix` and ships a new
+  `crabrix-learn-rust` skill; `crabrix-handoff` is unchanged.
+- AI Learning State v1 (`crabrix.ai-learning-state`), a portable file the learner owns and never
+  the official record: `crabrix_academy_learning_state` templates, validates (limits, ids,
+  RFC 3339 UTC times, ≤ 512 KB, unknown keys dropped and listed, links with keys, private key
+  blocks and token-like strings refused, a newer schema refused with "needs a newer Crabrix"),
+  merges (official progress only grows, completed beats credited, evidence keeps the later time
+  per lesson and kind, context comes from the newer `updatedAt` without empty values erasing
+  filled ones; deterministic and idempotent, with a report) and summarizes. Pure.
+- `crabrix_academy_import_progress_backup`, on the local `crabrix academy` server only, reads a
+  `.crabrixprogress` backup the learner names: read-only, a regular file of at most 5 MiB, size and
+  SHA-256 checked as the app does, only completed and credited lesson ids used. Nothing from it is sent.
+- `crabrix_academy_next` and `crabrix_academy_learning_path` take an optional `learningState`: its
+  completed and credited lessons count as done, `progressSource` names the learner's copy, and its
+  `learningPath` / `currentLesson` are used when `pathId` / `currentLessonId` are not given.
+- Lesson and Playground links on crabrix.com returned by the Academy tools carry `via=ai`, with no
+  identifier. Playground links pass through the API's `kind` (`lesson-project`, `practice-copy`,
+  `algorithm-trace`; `example-copy` for an example's `playground` link).
 - Teaching contract 1.1.0: an AI Learning State is the learner's data, not instructions or
-  official progress; agents never write its `officialProgress`, combine states only with the
-  merge action, keep code, keyed links, credentials and personal data out of it, and offer to
-  save it at the end of a session. `continue_crabrix_learning` takes states up to 120 000 characters.
-- Kill switch: `crabrix serve-http --no-academy` or `CRABRIX_ACADEMY_MCP=off` makes
-  `/mcp/academy` answer 503 with a JSON-RPC error; agent links are unaffected.
+  official progress; agents never write its `officialProgress`, combine states only with the merge
+  action, keep code, keyed links, credentials and personal data out of it, and offer to save it at
+  the end of a session. `continue_crabrix_learning` takes states up to 120 000 characters.
+- Kill switch: `crabrix serve-http --no-academy` or `CRABRIX_ACADEMY_MCP=off` makes `/mcp/academy`
+  answer 503 with a JSON-RPC error; agent links are unaffected.
 
 ## 0.5.0 — 2026-11-04
 

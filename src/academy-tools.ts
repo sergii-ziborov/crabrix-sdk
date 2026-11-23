@@ -64,7 +64,11 @@ function stateProgress(learningState: Record<string, unknown>, completedLessonId
     : "The AI Learning State has no officialProgress copy, so it marks no lesson done.")
     + (completedLessonIds ? " Lessons in completedLessonIds came from you (the caller)." : "")
     + " Evidence items never count as done. Nothing was stored.";
-  return { keys, source: completedLessonIds ? `${part} + caller` : part, note };
+  return { state, keys, source: completedLessonIds ? `${part} + caller` : part, note };
+}
+/** A path the learning state names; undefined when the Academy has no such path, so a stale state never fails the call. */
+async function pathOrUndefined(client: AcademyClient, pathId: string) {
+  try { return await client.path(pathId); } catch (error) { if (toCrabrixError(error).code === "ACADEMY_NOT_FOUND") return undefined; throw error; }
 }
 const TEMPLATE_NOTE = "Fill only the context (learningPath, teachingMode, currentLesson, learner, aiSession) and evidence (one item per lesson and kind: discussed, compiled_by_learner, ran_by_learner or ai_reviewed, with its RFC 3339 UTC time in at). Leave officialProgress null: only the Crabrix app, or a local Crabrix MCP reading a .crabrixprogress file the learner names, fills it. Set updatedAt to now whenever you change the state. Never include code, links with keys, credentials, emails or file paths. Give the learner the JSON to save as crabrix-learning-state.json; combine it with an older state only with action merge.";
 const MERGE_NOTE = "Merged by the AI Learning State v1 rules: official progress is a union that never loses a lesson, evidence keeps the later time per lesson and kind, context comes from the newer updatedAt without an empty value replacing a filled one. Give the learner the merged state to save; nothing was stored.";
@@ -269,17 +273,22 @@ export function registerAcademy(server: McpServer, academy: AcademyClient | Acad
 
   server.registerTool("crabrix_academy_learning_path", {
     title: "Crabrix learning paths",
-    description: "List learning paths (Rust from Zero, Rust for Node.js Developers, Rust for C Developers, Rust for Experienced Programmers, Backend, Async, Systems, Interview), or one path's steps. Paths only reorder existing lessons. Steps are marked done only from completedLessonIds you pass and, if you pass the learner's AI Learning State as learningState, its officialProgress completed and credited lessons (the learner's copy, not read from Crabrix); nothing is stored.",
+    description: "List learning paths (Rust from Zero, Rust for Node.js Developers, Rust for C Developers, Rust for Experienced Programmers, Backend, Async, Systems, Interview), or one path's steps. Paths only reorder existing lessons. Steps are marked done only from completedLessonIds you pass and, if you pass the learner's AI Learning State as learningState, its officialProgress completed and credited lessons (the learner's copy, not read from Crabrix); without pathId, the state's learningPath is shown. Nothing is stored.",
     inputSchema: z.object({ pathId: z.string().min(1).max(128).optional(), completedLessonIds: lessonIdList.optional(), cursor, limit: z.number().int().min(1).max(50).optional(),
       learningState: stateObject.optional() }).strict(), annotations: read,
   }, async ({ pathId, completedLessonIds, cursor: after, limit, learningState }) => run(async () => {
     const fromState = learningState ? stateProgress(learningState, completedLessonIds) : undefined;
     const index = await client.index();
-    if (!pathId) return { catalogVersion: index.catalogVersion, paths: index.paths };
-    const path = await client.path(pathId), done = fromState?.keys ?? lessonKeys(completedLessonIds), app = appIndex(index);
+    // Without pathId, the learning state's own path is shown.
+    const statePath = !pathId ? fromState?.state.learningPath ?? undefined : undefined;
+    if (!pathId && !statePath) return { catalogVersion: index.catalogVersion, paths: index.paths };
+    const path = pathId ? await client.path(pathId) : await pathOrUndefined(client, statePath!);
+    if (!path) return { catalogVersion: index.catalogVersion, paths: index.paths, basis: `The learning state's learningPath ${statePath} is not a Crabrix learning path, so no path was chosen; offer one of these.` };
+    const done = fromState?.keys ?? lessonKeys(completedLessonIds), app = appIndex(index);
     const steps = path.steps.map((step, position) => ({ position: position + 1, ...step, url: viaAI(step.url), ...availability(app.get(`${step.courseId}/${step.lessonId}`)), done: isDone(done, step.courseId, step.lessonId) }));
     const scope = `path:${path.id}:${index.catalogVersion}`, listed = page(steps, decodeCursor(after, scope), limit ?? 25, scope);
     return { catalogVersion: path.catalogVersion, path: { id: path.id, title: path.title, audience: path.audience, description: path.description },
+      ...(statePath ? { basis: `path ${path.id} from the learning state's learningPath (no pathId given)` } : {}),
       steps: listed.items, total: listed.total, progress: { source: fromState?.source ?? (completedLessonIds ? "caller" : "none"), completed: steps.filter(step => step.done).length, total: steps.length, note: fromState?.note ?? PROGRESS_NOTE },
       ...(listed.nextCursor ? { nextCursor: listed.nextCursor } : {}) };
   }));
@@ -337,34 +346,44 @@ export function registerAcademy(server: McpServer, academy: AcademyClient | Acad
 
   server.registerTool("crabrix_academy_next", {
     title: "Suggest the next lesson",
-    description: "Suggest what to study next from a learning path, the current lesson, completedLessonIds you supply and, optionally, the learner's AI Learning State (learningState: its officialProgress completed and credited lessons count as done; evidence does not). Crabrix does not read or store the learner's progress here; never present caller-supplied progress or the learner's state as official.",
+    description: "Suggest what to study next from a learning path, the current lesson, completedLessonIds you supply and, optionally, the learner's AI Learning State (learningState: its officialProgress completed and credited lessons count as done, evidence does not, and its learningPath and currentLesson are used when pathId or currentLessonId is not given; basis says which). Crabrix does not read or store the learner's progress here; never present caller-supplied progress or the learner's state as official.",
     inputSchema: z.object({ pathId: z.string().min(1).max(128).optional(), completedLessonIds: lessonIdList.optional(), currentLessonId: z.string().min(1).max(300).optional(),
       limit: z.number().int().min(1).max(5).optional(), learningState: stateObject.optional() }).strict(), annotations: read,
   }, async ({ pathId, completedLessonIds, currentLessonId, limit, learningState }) => run(async () => {
     const fromState = learningState ? stateProgress(learningState, completedLessonIds) : undefined;
     const index = await client.index(), done = fromState?.keys ?? lessonKeys(completedLessonIds), size = limit ?? 3;
-    const current = currentLessonId ? refFromKey(index, currentLessonId) : undefined;
+    let current = currentLessonId ? refFromKey(index, currentLessonId) : undefined;
     if (currentLessonId && !current) throw new CrabrixError("ACADEMY_NOT_FOUND", `No lesson ${currentLessonId}. Use crabrix_academy_search.`);
+    // Without pathId / currentLessonId, the learning state's learningPath / currentLesson are used; a stale one is skipped and named.
+    const unused: string[] = [], stateLesson = !currentLessonId ? fromState?.state.currentLesson : undefined, statePath = !pathId ? fromState?.state.learningPath : undefined;
+    if (stateLesson) {
+      current = index.lessons.find(lesson => lesson.courseId === stateLesson.courseId && lesson.id === stateLesson.lessonId);
+      if (!current) unused.push(`its currentLesson ${stateLesson.courseId}/${stateLesson.lessonId} is not in Crabrix Academy ${index.catalogVersion}`);
+    }
+    const path = pathId ? await client.path(pathId) : statePath ? await pathOrUndefined(client, statePath) : undefined;
+    if (statePath && !path) unused.push(`its learningPath ${statePath} is not a Crabrix learning path`);
+    const pathNote = !pathId && path ? " (the learning state's learningPath)" : "", lessonNote = stateLesson && current ? " (the learning state's currentLesson)" : "";
     let candidates: { courseId: string; lessonId: string; title: string; url: string; note?: string }[];
     let basis: string;
-    if (pathId) {
-      const path = await client.path(pathId), at = current ? path.steps.findIndex(step => step.courseId === current.courseId && step.lessonId === current.id) : -1;
+    if (path) {
+      const at = current ? path.steps.findIndex(step => step.courseId === current!.courseId && step.lessonId === current!.id) : -1;
       candidates = path.steps.slice(at + 1).filter(step => !isDone(done, step.courseId, step.lessonId));
-      basis = `path ${path.id}` + (current ? ` after ${current.courseId}/${current.id}` : "");
+      basis = `path ${path.id}${pathNote}` + (current ? ` after ${current.courseId}/${current.id}${lessonNote}` : "");
     } else if (current) {
-      const course = index.lessons.filter(lesson => lesson.courseId === current.courseId), at = course.findIndex(lesson => lesson.id === current.id);
-      candidates = course.slice(at + 1).filter(lesson => !isDone(done, lesson.courseId, lesson.id)).map(lesson => ({ courseId: lesson.courseId, lessonId: lesson.id, title: lesson.title, url: lesson.url }));
-      basis = `course order after ${current.courseId}/${current.id}`;
+      const lesson = current, course = index.lessons.filter(item => item.courseId === lesson.courseId), at = course.findIndex(item => item.id === lesson.id);
+      candidates = course.slice(at + 1).filter(item => !isDone(done, item.courseId, item.id)).map(item => ({ courseId: item.courseId, lessonId: item.id, title: item.title, url: item.url }));
+      basis = `course order after ${current.courseId}/${current.id}${lessonNote}`;
     } else {
       const start = index.lessons.find(lesson => !isDone(done, lesson.courseId, lesson.id) && lesson.courseId === "basics");
       candidates = start ? [{ courseId: start.courseId, lessonId: start.id, title: start.title, url: start.url }] : [];
       basis = "no path or current lesson given: the first Rust Basics lesson not marked complete";
     }
+    if (unused.length) basis += `; not used from the learning state: ${unused.join(" and ")}`;
     const app = appIndex(index);
     return { catalogVersion: index.catalogVersion, next: candidates.slice(0, size).map(item => ({ ...item, url: viaAI(item.url), ...availability(app.get(`${item.courseId}/${item.lessonId}`)) })), basis,
       progressSource: fromState?.source ?? (completedLessonIds ? "caller" : "none"),
       note: fromState?.note ?? (completedLessonIds ? PROGRESS_NOTE : "No progress was supplied, so nothing is assumed complete. Ask the learner where they are, or let them paste an exported AI Learning State."),
-      ...(pathId ? {} : { paths: index.paths.map(path => ({ id: path.id, title: path.title })) }) };
+      ...(path ? {} : { paths: index.paths.map(item => ({ id: item.id, title: item.title })) }) };
   }));
 
   server.registerTool("crabrix_academy_learning_state", {

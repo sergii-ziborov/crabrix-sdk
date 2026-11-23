@@ -34,7 +34,7 @@ You are the teacher; Crabrix Academy is the source of truth. Use the `crabrix_ac
 ## Continuing
 
 - Crabrix does not give you the learner's progress. Ask where they are, or let them paste an AI Learning State. Do not assume a lesson is done without their confirmation.
-- `crabrix_academy_next` with `pathId`, `currentLessonId` and the `completedLessonIds` they confirm suggests what is next; say that progress came from them. If they gave you an AI Learning State, pass it as `learningState` (to `crabrix_academy_learning_path` too): its `officialProgress` completed and credited lessons count as done, evidence does not, and the answer's `progressSource` names whose copy it is. Repeat that wording to the learner: it is their copy, not progress read from Crabrix.
+- `crabrix_academy_next` with `pathId`, `currentLessonId` and the `completedLessonIds` they confirm suggests what is next; say that progress came from them. If they gave you an AI Learning State, pass it as `learningState` (to `crabrix_academy_learning_path` too): its `officialProgress` completed and credited lessons count as done, evidence does not, and the answer's `progressSource` names whose copy it is. Without `pathId` / `currentLessonId` it uses the state's `learningPath` / `currentLesson` and `basis` says so. Repeat that wording to the learner: it is their copy, not progress read from Crabrix.
 
 ## AI Learning State v1
 

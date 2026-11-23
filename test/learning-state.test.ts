@@ -548,6 +548,48 @@ test("TOOLS-02: next and learning_path count a learning state's completed and cr
   } finally { await close(); await api.close(); }
 });
 
+test("TOOLS-06: next and learning_path default pathId and currentLessonId from the learning state and say so in basis", async () => {
+  const api = await startAcademyAPI(), { call, close } = await academyClient(api.origin);
+  const onPath = state({ learningPath: "rust-for-nodejs", currentLesson: { courseId: "rust-for-nodejs-developers", lessonId: "node-no-garbage-collector" } });
+  try {
+    const next = (await call("crabrix_academy_next", { learningState: onPath, limit: 2 })).value;
+    assert.deepEqual(next.next.map((item: any) => item.lessonId), ["node-types-are-checked-not-erased", "node-console-log-to-println"]);
+    assert.equal(next.basis, "path rust-for-nodejs (the learning state's learningPath) after rust-for-nodejs-developers/node-no-garbage-collector (the learning state's currentLesson)");
+    assert.equal("paths" in next, false);
+    // Explicit arguments win over the state.
+    const explicitPath = (await call("crabrix_academy_next", { learningState: onPath, pathId: "rust-from-zero", limit: 1 })).value;
+    assert.equal(explicitPath.basis, "path rust-from-zero after rust-for-nodejs-developers/node-no-garbage-collector (the learning state's currentLesson)");
+    assert.equal(explicitPath.next[0].lessonId, "what-is-rust");
+    const explicitLesson = (await call("crabrix_academy_next", { learningState: onPath, currentLessonId: "node-what-rust-is", limit: 1 })).value;
+    assert.equal(explicitLesson.basis, "path rust-for-nodejs (the learning state's learningPath) after rust-for-nodejs-developers/node-what-rust-is");
+    assert.equal(explicitLesson.next[0].lessonId, "node-no-garbage-collector");
+    // Only a current lesson: course order, and the path list is offered.
+    const lessonOnly = (await call("crabrix_academy_next", { learningState: state({ currentLesson: { courseId: "basics", lessonId: "what-is-rust" } }), limit: 1 })).value;
+    assert.equal(lessonOnly.basis, "course order after basics/what-is-rust (the learning state's currentLesson)");
+    assert.equal(lessonOnly.next[0].lessonId, "hello-rust"); assert.ok(Array.isArray(lessonOnly.paths));
+    // A stale path or lesson in the state is skipped and named, never an error.
+    const stale = await call("crabrix_academy_next", { learningState: state({ learningPath: "retired-path", currentLesson: { courseId: "basics", lessonId: "no-such-lesson" } }), limit: 1 });
+    assert.equal(stale.error, false, stale.text);
+    assert.equal(stale.value.next[0].lessonId, "what-is-rust");
+    assert.equal(stale.value.basis, `no path or current lesson given: the first Rust Basics lesson not marked complete; not used from the learning state: its currentLesson basics/no-such-lesson is not in Crabrix Academy ${academyFixture["index.json"].catalogVersion} and its learningPath retired-path is not a Crabrix learning path`);
+    // learning_path shows the state's path when no pathId is given.
+    const shown = (await call("crabrix_academy_learning_path", { learningState: onPath, limit: 2 })).value;
+    assert.equal(shown.path.id, "rust-for-nodejs"); assert.equal(shown.basis, "path rust-for-nodejs from the learning state's learningPath (no pathId given)");
+    assert.equal(shown.steps.length, 2); assert.equal(shown.total, (academyFixture["paths/rust-for-nodejs.json"] as any).steps.length);
+    const more = (await call("crabrix_academy_learning_path", { learningState: onPath, limit: 2, cursor: shown.nextCursor })).value;
+    assert.equal(more.steps[0].position, 3);
+    const chosen = (await call("crabrix_academy_learning_path", { learningState: onPath, pathId: "rust-from-zero", limit: 1 })).value;
+    assert.equal(chosen.path.id, "rust-from-zero"); assert.equal("basis" in chosen, false);
+    const stalePath = (await call("crabrix_academy_learning_path", { learningState: state({ learningPath: "retired-path" }) })).value;
+    assert.deepEqual(stalePath.paths.map((item: any) => item.id), ["rust-from-zero", "rust-for-nodejs"]); assert.match(stalePath.basis, /retired-path is not a Crabrix learning path/);
+    const noPath = (await call("crabrix_academy_learning_path", { learningState: state() })).value;
+    assert.equal("basis" in noPath, false); assert.ok(Array.isArray(noPath.paths));
+    // Without a learning state nothing is defaulted.
+    assert.equal("basis" in (await call("crabrix_academy_learning_path", { pathId: "rust-for-nodejs", limit: 1 })).value, false);
+    assert.equal((await call("crabrix_academy_next", { limit: 1 })).value.basis, "no path or current lesson given: the first Rust Basics lesson not marked complete");
+  } finally { await close(); await api.close(); }
+});
+
 test("TOOLS-03: the local server reads a .crabrixprogress file the learner names; nothing is sent; remote never has the tool", async () => {
   const api = await startAcademyAPI(), local = await academyClient(api.origin, { localFiles: true });
   const directory = mkdtempSync(path.join(tmpdir(), "crabrix-import-"));

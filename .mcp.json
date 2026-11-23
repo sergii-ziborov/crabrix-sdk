@@ -4,14 +4,14 @@
       "command": "npx",
       "args": [
         "-y",
-        "crabrix@0.5.0"
+        "crabrix@0.6.0"
       ]
     },
     "crabrix-academy": {
       "command": "npx",
       "args": [
         "-y",
-        "crabrix@0.5.0",
+        "crabrix@0.6.0",
         "academy"
       ]
     }
