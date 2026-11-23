@@ -1,13 +1,13 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "sha256": {
-    "dist/cli.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8",
-    "crates/crabrix/runtime/bridge.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8",
-    "go/crabrix/runtime/bridge.mjs": "bdf31b2a2a8e714f5efea768563ea7810ed37ab88b74df0f295e4d0bc26956a8"
+    "dist/cli.mjs": "73a75a38ac6d5ff69fc2bf5befed212ef832beb10a1b19eb1391b6cca1dba617",
+    "crates/crabrix/runtime/bridge.mjs": "73a75a38ac6d5ff69fc2bf5befed212ef832beb10a1b19eb1391b6cca1dba617",
+    "go/crabrix/runtime/bridge.mjs": "73a75a38ac6d5ff69fc2bf5befed212ef832beb10a1b19eb1391b6cca1dba617"
   },
   "requires": "Node.js 22+",
   "source": "src/cli.ts and src/core",
-  "npmPackage": "crabrix@0.5.0",
+  "npmPackage": "crabrix@0.6.0",
   "documentFormats": [
     1,
     2

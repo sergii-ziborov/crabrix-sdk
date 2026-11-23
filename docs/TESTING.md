@@ -57,3 +57,22 @@ URL, plaintext user project, auth configuration or token. A participant name and
 a reported output card are not attestations. These checks do not establish
 physical-device timings, arbitrary Cargo compatibility or a live model-provider
 conversation.
+
+## Crabrix Academy tools
+
+`test/academy.test.ts` serves `test/fixtures/academy-v1.json` (a subset of the public
+Academy API v1) from a local HTTP server with ETag/304 support and checks every
+`crabrix_academy_*` tool, the stdio `crabrix academy` server, the remote `/mcp/academy`
+route, and that the default and agent-link tool lists are unchanged. Regenerate the fixture
+from the website corpus with
+`node test/support/make-academy-fixture.mjs <site/content/courses.json> <crabrix-courses>`.
+
+`test/learning-state.test.ts` covers the AI Learning State v1 (every field rule, secret
+patterns, the newer-version refusal, each merge rule, and idempotence over 200 seeded random
+pairs), the `.crabrixprogress` reader, the learning-state and backup tools through an
+in-memory MCP client, `via=ai` links, the remote `/mcp/academy` never offering the backup
+tool, and the `--no-academy` / `CRABRIX_ACADEMY_MCP=off` kill switch (in process and through
+the built CLI) with an agent link still working. `test/fixtures/synthetic-v1.crabrixprogress`
+and `synthetic-v2.crabrixprogress` (schema version 2) hold synthetic data only and are made
+with the app's codec (Compression `COMPRESSION_ZLIB`, CryptoKit SHA-256) by
+`swift test/fixtures/make-progress-backup.swift test/fixtures`.
