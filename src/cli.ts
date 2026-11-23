@@ -4,7 +4,7 @@ import { makeServer } from "./server.js";
 import { PlaygroundRoom } from "./room.js";
 import { SDK_VERSION } from "./version.js";
 import { formatDoctor, runDoctor } from "./doctor.js";
-import { serveHTTP } from "./remote-http.js";
+import { parseServeHTTPArgs, serveHTTP } from "./remote-http.js";
 import { makeAcademyServer } from "./server.js";
 
 const args = process.argv.slice(2);
@@ -12,8 +12,8 @@ if (args.length === 1 && args[0] === "--help") {
   const color = process.stdout.isTTY ? { crab: "\x1b[38;2;255;95;65m", cyan: "\x1b[38;2;77;216;235m", off: "\x1b[0m" } : { crab: "", cyan: "", off: "" };
   process.stdout.write(`${color.crab}🦀 Crabrix SDK + MCP${color.off} · ${SDK_VERSION}\n${color.cyan}Agents and people. One temporary Rust Playground.${color.off}\n\nRun without arguments as an MCP stdio server.\nSetup: https://crabrix.com/ai/\nNode.js 22 or newer. No account. One-hour rooms by default.\nLive edits and selections. Use a browser or app for signed local Run/Debug after permission. No iPhone is required.
 Diagnostics: crabrix doctor [--json]. It opens no room, reads no source and changes no setting.
-Remote MCP for agent links: crabrix serve-http [--port 8090] [--host 127.0.0.1], behind a TLS proxy. It also serves read-only Crabrix Academy MCP at /mcp/academy.
-Crabrix Academy only (read-only lessons for learning Rust with an agent): crabrix academy.
+Remote MCP for agent links: crabrix serve-http [--port 8090] [--host 127.0.0.1], behind a TLS proxy. It also serves read-only Crabrix Academy MCP at /mcp/academy; --no-academy or CRABRIX_ACADEMY_MCP=off pauses only that route (503).
+Crabrix Academy only (read-only lessons for learning Rust with an agent): crabrix academy. It can also read a .crabrixprogress backup file you name, locally.
 Library: import { Crabrix } from "crabrix";\n`);
 } else if (args.length === 1 && args[0] === "--version") {
   process.stdout.write(SDK_VERSION + "\n");
@@ -23,14 +23,13 @@ Library: import { Crabrix } from "crabrix";\n`);
   process.exitCode = report.ok ? 0 : 1;
 } else if (args[0] === "serve-http") {
   // Remote MCP for agent links, behind a TLS proxy that forwards /mcp/ here.
-  const flags = new Map<string, string>();
-  for (let index = 1; index < args.length; index += 2) flags.set(args[index], args[index + 1] ?? "");
-  const unknown = [...flags.keys()].filter(flag => !["--port", "--host", "--relay", "--academy-origin"].includes(flag));
-  if (unknown.length) { process.stderr.write("Crabrix: serve-http takes --port, --host, --relay and --academy-origin.\n"); process.exit(2); }
-  await serveHTTP({ port: Number(flags.get("--port") ?? 8090), host: flags.get("--host") ?? "127.0.0.1", relay: flags.get("--relay"), academyOrigin: flags.get("--academy-origin") });
+  const options = parseServeHTTPArgs(args.slice(1));
+  if (!options) { process.stderr.write("Crabrix: serve-http takes --port, --host, --relay, --academy-origin and --no-academy.\n"); process.exit(2); }
+  await serveHTTP(options);
 } else if (args.length === 1 && args[0] === "academy") {
   // Read-only Crabrix Academy over stdio: lessons, paths and hints; no room, no source, no execution.
-  const handle = serveStdio(() => makeAcademyServer(), { onerror: () => { process.stderr.write("Crabrix Academy MCP protocol error.\n"); } });
+  // Local stdio only: it may also read a .crabrixprogress file the learner names.
+  const handle = serveStdio(() => makeAcademyServer({}, { localFiles: true }), { onerror: () => { process.stderr.write("Crabrix Academy MCP protocol error.\n"); } });
   const close = async () => { await handle.close(); };
   process.stdin.once("end", () => { void close(); });
   process.once("SIGINT", () => { void close(); });

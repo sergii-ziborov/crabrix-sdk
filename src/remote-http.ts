@@ -4,8 +4,24 @@ import { createRemoteHandler } from "./remote.js";
 
 // Node's HTTP server in front of the Web-standard handler. The URL holds the agent
 // capability, so requests are never logged.
-export async function serveHTTP(options: { port: number; host: string; relay?: string; origin?: string; academyOrigin?: string }) {
-  const remote = createRemoteHandler({ origin: options.origin, relay: options.relay, academyOrigin: options.academyOrigin });
+export type ServeHTTPOptions = { port: number; host: string; relay?: string; origin?: string; academyOrigin?: string;
+  /** false: /mcp/academy answers 503 (also CRABRIX_ACADEMY_MCP=off). Agent links are unaffected. */
+  academy?: boolean };
+
+/** `crabrix serve-http` arguments: value flags in pairs, plus --no-academy. null for an unknown flag. */
+export function parseServeHTTPArgs(args: string[]): ServeHTTPOptions | null {
+  const flags = new Map<string, string>();
+  let academy = true;
+  for (let index = 0; index < args.length; index++) {
+    if (args[index] === "--no-academy") { academy = false; continue; }
+    flags.set(args[index], args[index + 1] ?? ""); index++;
+  }
+  if ([...flags.keys()].some(flag => !["--port", "--host", "--relay", "--academy-origin"].includes(flag))) return null;
+  return { port: Number(flags.get("--port") ?? 8090), host: flags.get("--host") ?? "127.0.0.1", relay: flags.get("--relay"), academyOrigin: flags.get("--academy-origin"), academy };
+}
+
+export async function serveHTTP(options: ServeHTTPOptions) {
+  const remote = createRemoteHandler({ origin: options.origin, relay: options.relay, academyOrigin: options.academyOrigin, academy: options.academy });
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     try {
       if (req.url === "/healthz") { res.end(JSON.stringify({ ok: true, sessions: remote.sessions })); return; }
@@ -28,6 +44,7 @@ export async function serveHTTP(options: { port: number; host: string; relay?: s
   server.requestTimeout = 0;
   await new Promise<void>(resolve => server.listen(options.port, options.host, resolve));
   process.stderr.write(`Crabrix remote MCP on ${options.host}:${options.port}. Agent links are not logged.\n`);
+  if (remote.academy === "paused") process.stderr.write("Crabrix Academy MCP (/mcp/academy) is paused: it answers 503. Agent links work as usual.\n");
   const close = () => { remote.close(); server.closeAllConnections(); server.close(); };
   process.once("SIGINT", close); process.once("SIGTERM", close);
   return { server, close };

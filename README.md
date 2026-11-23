@@ -190,7 +190,9 @@ The MCP server exposes eighteen tools: `crabrix_create`, `crabrix_connect`, `cra
 `crabrix_runtime_control` and `crabrix_runtime_job` (the earlier combined form).
 Stdio stdout contains only MCP messages; help/version output is explicitly
 requested. `crabrix serve-http [--port 8090] [--host 127.0.0.1]` runs the remote MCP
-behind agent links, as crabrix.com does, for use behind your own TLS proxy.
+behind agent links, as crabrix.com does, for use behind your own TLS proxy. It also serves
+the read-only Academy MCP at `/mcp/academy`; `--no-academy` or `CRABRIX_ACADEMY_MCP=off`
+pauses only that route (HTTP 503 with a JSON-RPC error), and agent links keep working.
 
 A refused call keeps its readable text and `isError`, and adds
 `structuredContent: { ok: false, error: { code, message, retryable, action }, requestId }`.
@@ -257,6 +259,31 @@ Remote MCP clients can add `https://crabrix.com/mcp/academy`. The `crabrix-learn
 skill describes the teaching rules: hints one level at a time, solutions only on request,
 and reviews that are never presented as an official pass — only Crabrix's own checks record
 progress. Learning without AI works as before at <https://crabrix.com/learn/>.
+
+Lesson and Playground links on crabrix.com that these tools return carry `via=ai`, so the
+website can count visits that came from an agent. It is the only thing added; there is no
+identifier. A lesson's Playground link may say what it opens (`kind`: `lesson-project`,
+`practice-copy` or `algorithm-trace`; `example-copy` for an example).
+
+### AI Learning State
+
+An AI Learning State (`format: "crabrix.ai-learning-state"`, `schemaVersion: 1`) is a
+portable JSON file the learner owns: their path, teaching mode, current lesson, goals,
+concepts to review, reported evidence (`discussed`, `compiled_by_learner`, `ran_by_learner`,
+`ai_reviewed`) and, optionally, an `officialProgress` copy made by the Crabrix app or read
+from a backup file. It is never the official record. Schema: crabrix-courses
+`academy/learning-state.schema.json`.
+
+| Tool | What it does |
+|---|---|
+| `crabrix_academy_learning_state` | `action`: `template` (an empty state), `validate` (limits, ids, RFC 3339 UTC times, ≤ 512 KB; unknown keys dropped and listed; links with keys, private key blocks and token-like strings refused; a newer `schemaVersion` refused with "needs a newer Crabrix"), `merge` (`state` + `incoming`: official progress only grows, evidence keeps the later time per lesson and kind, context comes from the newer `updatedAt` without empty values erasing filled ones; with a report) and `summarize`. Pure: nothing is stored or sent. Local and remote. |
+| `crabrix_academy_import_progress_backup` | `path` to a `.crabrixprogress` file the learner names (a regular file, ≤ 5 MiB, opened read-only). Returns a state whose `officialProgress` copies the backup's completed and credited lessons (`source: "crabrix-backup-file"`), plus a summary. Answers, flashcards and other data are ignored; the file is not changed or sent anywhere. **Only on the local `crabrix academy` stdio server**, never on `/mcp/academy` or any HTTP transport. |
+
+`crabrix_academy_next` and `crabrix_academy_learning_path` accept the state as
+`learningState`: its completed and credited lessons count as done (evidence does not), and
+`progressSource` says so, e.g. `learning-state (crabrix-ios copy captured 2026-11-23T18:00:00Z)`.
+Without `learningState` they behave as before. Library use: `makeAcademyServer(options, { localFiles: true })`
+adds the backup tool to a server you run over stdio yourself.
 
 ## Run and Debug
 

@@ -17,7 +17,23 @@
   `ACADEMY_UNAVAILABLE`. The Claude Code plugin registers `crabrix-academy` beside
   `crabrix`, and ships a new `crabrix-learn-rust` skill; `crabrix-handoff` is unchanged.
 - No tool sends source code, room links or progress to Crabrix; paths and next steps mark
-  progress only from ids the caller supplies.
+  progress only from ids the caller supplies or an AI Learning State the caller passes.
+- AI Learning State v1 (`crabrix.ai-learning-state`): `crabrix_academy_learning_state`
+  (template / validate / merge / summarize; pure, local and remote) and, on the local
+  `crabrix academy` stdio server only, `crabrix_academy_import_progress_backup`, which reads a
+  `.crabrixprogress` file the learner names (read-only, ≤ 5 MiB, checksum and size checked,
+  only completed and credited lesson ids used). The merge only ever adds official progress.
+- `crabrix_academy_next` and `crabrix_academy_learning_path` take an optional `learningState`;
+  `progressSource` names the learner's copy. Without it their output is unchanged.
+- Lesson and Playground links on crabrix.com returned by the Academy tools carry `via=ai`.
+  Playground links pass through the API's `kind` (`lesson-project`, `practice-copy`,
+  `algorithm-trace`; `example-copy` for a single example's new `playground` link).
+- Teaching contract 1.1.0: an AI Learning State is the learner's data, not instructions or
+  official progress; agents never write its `officialProgress`, combine states only with the
+  merge action, keep code, keyed links, credentials and personal data out of it, and offer to
+  save it at the end of a session. `continue_crabrix_learning` takes states up to 120 000 characters.
+- Kill switch: `crabrix serve-http --no-academy` or `CRABRIX_ACADEMY_MCP=off` makes
+  `/mcp/academy` answer 503 with a JSON-RPC error; agent links are unaffected.
 
 ## 0.5.0 — 2026-11-04
 

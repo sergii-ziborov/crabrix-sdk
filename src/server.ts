@@ -4,7 +4,7 @@ import { PlaygroundRoom } from "./room.js";
 import { SDK_VERSION, SERVER_NAME } from "./version.js";
 import { toCrabrixError } from "./errors.js";
 import { randomBytes } from "node:crypto";
-import { ACADEMY_GUIDANCE, registerAcademy } from "./academy-tools.js";
+import { ACADEMY_GUIDANCE, registerAcademy, type AcademyToolOptions } from "./academy-tools.js";
 import type { AcademyClient, AcademyOptions } from "./academy.js";
 
 export type ServerOptions = {
@@ -14,12 +14,16 @@ export type ServerOptions = {
   academy?: boolean | AcademyOptions | AcademyClient;
 };
 
-/** Only the read-only Crabrix Academy tools, resources and prompts: no room, no source, no execution. */
-export function makeAcademyServer(academy: AcademyOptions | AcademyClient = {}) {
+/**
+ * Only the read-only Crabrix Academy tools, resources and prompts: no room, no source, no execution.
+ * `localFiles` (local stdio only, never over HTTP) adds the tool that reads a .crabrixprogress file the learner names.
+ */
+export function makeAcademyServer(academy: AcademyOptions | AcademyClient = {}, options: AcademyToolOptions = {}) {
   const server = new McpServer({ name: "crabrix-academy", title: "Crabrix Academy", version: SDK_VERSION,
     websiteUrl: "https://crabrix.com/learn/with-ai/", icons: [{ src: "https://crabrix.com/brand/crabrix-mark.png", mimeType: "image/png" }] },
-  { instructions: "Use these read-only tools to teach Rust from the official Crabrix Academy. They read public lessons only and cannot see the learner's projects, rooms or progress. " + ACADEMY_GUIDANCE });
-  registerAcademy(server, academy);
+  { instructions: "Use these read-only tools to teach Rust from the official Crabrix Academy. They read public lessons only and cannot see the learner's projects, rooms or progress"
+    + (options.localFiles ? ", except a .crabrixprogress backup file the learner names, which crabrix_academy_import_progress_backup reads on this computer and never sends anywhere. " : ". ") + ACADEMY_GUIDANCE });
+  registerAcademy(server, academy, options);
   return server;
 }
 

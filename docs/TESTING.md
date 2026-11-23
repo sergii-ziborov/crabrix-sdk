@@ -66,3 +66,13 @@ Academy API v1) from a local HTTP server with ETag/304 support and checks every
 route, and that the default and agent-link tool lists are unchanged. Regenerate the fixture
 from the website corpus with
 `node test/support/make-academy-fixture.mjs <site/content/courses.json> <crabrix-courses>`.
+
+`test/learning-state.test.ts` covers the AI Learning State v1 (every field rule, secret
+patterns, the newer-version refusal, each merge rule, and idempotence over 200 seeded random
+pairs), the `.crabrixprogress` reader, the learning-state and backup tools through an
+in-memory MCP client, `via=ai` links, the remote `/mcp/academy` never offering the backup
+tool, and the `--no-academy` / `CRABRIX_ACADEMY_MCP=off` kill switch (in process and through
+the built CLI) with an agent link still working. `test/fixtures/synthetic-v1.crabrixprogress`
+and `synthetic-v2.crabrixprogress` (schema version 2) hold synthetic data only and are made
+with the app's codec (Compression `COMPRESSION_ZLIB`, CryptoKit SHA-256) by
+`swift test/fixtures/make-progress-backup.swift test/fixtures`.

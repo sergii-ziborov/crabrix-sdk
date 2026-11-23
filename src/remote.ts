@@ -20,11 +20,16 @@ export type RemoteOptions = {
   academyOrigin?: string;
   /** Concurrent /mcp/academy requests, kept apart from room sessions. */
   maxAcademyRequests?: number;
+  /** false pauses /mcp/academy (HTTP 503); CRABRIX_ACADEMY_MCP=off does the same. Agent links are unaffected. */
+  academy?: boolean;
 };
 type Session = { transport: WebStandardStreamableHTTPServerTransport; room: PlaygroundRoom; link: Buffer; used: number; expiresAt: number };
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 const jsonError = (status: number, message: string) => Response.json({ jsonrpc: "2.0", error: { code: -32000, message }, id: null }, { status, headers: { "Cache-Control": "no-store" } });
+const ACADEMY_PAUSED = "Crabrix Academy MCP is paused. Lessons stay available at https://crabrix.com/learn/ and in the Crabrix app. Crabrix agent links are not affected.";
+/** The kill switch for the public Academy MCP: `serve-http --no-academy` or CRABRIX_ACADEMY_MCP=off. */
+const academyMcpPaused = (option?: boolean) => option === false || (process.env.CRABRIX_ACADEMY_MCP ?? "").trim().toLowerCase() === "off";
 
 export function createRemoteHandler(options: RemoteOptions = {}) {
   const origin = options.origin ?? "https://crabrix.com", relay = options.relay ?? origin;
@@ -34,7 +39,7 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
   // Public, read-only Academy MCP: stateless, no room, no key. Its own small limit
   // keeps lesson traffic from taking capacity that agent-link sessions need.
   const academy = new AcademyClient({ origin: options.academyOrigin ?? process.env.CRABRIX_ACADEMY_ORIGIN ?? origin });
-  const maxAcademy = options.maxAcademyRequests ?? 16;
+  const maxAcademy = options.maxAcademyRequests ?? 16, academyPaused = academyMcpPaused(options.academy);
   let academyInFlight = 0;
   async function handleAcademy(request: Request): Promise<Response> {
     if (request.method !== "POST") return Response.json({ jsonrpc: "2.0", error: { code: -32000, message: "Crabrix Academy MCP is stateless: send JSON-RPC requests with POST." }, id: null }, { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } });
@@ -68,7 +73,7 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
 
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (/^\/mcp\/academy\/?$/.test(url.pathname) && !url.search) return handleAcademy(request);
+    if (/^\/mcp\/academy\/?$/.test(url.pathname) && !url.search) return academyPaused ? jsonError(503, ACADEMY_PAUSED) : handleAcademy(request);
     // The path is the capability. It is compared as a hash and never echoed.
     let parsed;
     try { parsed = parseAgentLink(origin + url.pathname, origin); } catch { parsed = null; }
@@ -114,6 +119,8 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
   return {
     handle,
     get sessions() { return sessions.size; },
+    /** "paused" when the kill switch is on: /mcp/academy answers 503. */
+    get academy(): "on" | "paused" { return academyPaused ? "paused" : "on"; },
     close() { clearInterval(sweep); for (const id of [...sessions.keys()]) end(id); },
   };
 }
