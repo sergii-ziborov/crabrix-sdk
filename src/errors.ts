@@ -8,7 +8,7 @@ export type ErrorCode =
   | "NETWORK_UNREACHABLE" | "TLS_ERROR" | "PROXY_ERROR" | "JOIN_TIMEOUT" | "RELAY_CONFLICT" | "RELAY_UNAVAILABLE"
   | "RUNTIME_GRANT_REQUIRED" | "RUNTIME_UNAVAILABLE" | "OUTCOME_UNKNOWN" | "OPERATION_FAILED"
   | "CLIENT_UPDATE_REQUIRED" | "UNSUPPORTED_ROOM_FORMAT" | "PLAN_CHANGED" | "OPERATION_ID_CONFLICT" | "RECOVERY_FULL" | "PROJECT_BLOCKED"
-  | "ACADEMY_NOT_FOUND" | "ACADEMY_UNAVAILABLE";
+  | "ACADEMY_NOT_FOUND" | "ACADEMY_UNAVAILABLE" | "LEARN_LINK_NOT_FOUND" | "LEARN_LINK_UNAVAILABLE";
 
 const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   INVALID_LINK: { retryable: false, action: "check_link" },
@@ -42,6 +42,8 @@ const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   PROJECT_BLOCKED: { retryable: false, action: "fix_project" },
   ACADEMY_NOT_FOUND: { retryable: false, action: "check_ids" },
   ACADEMY_UNAVAILABLE: { retryable: true, action: "wait_and_retry" },
+  LEARN_LINK_NOT_FOUND: { retryable: false, action: "reconnect_learning_link" },
+  LEARN_LINK_UNAVAILABLE: { retryable: true, action: "wait_and_retry" },
 };
 
 export class CrabrixError extends Error {
@@ -94,7 +96,9 @@ function causeCodes(error: unknown): { codes: string[]; text: string } {
 }
 const TLS_CODE = /^(?:CERT_|UNABLE_TO_|DEPTH_ZERO|SELF_SIGNED|ERR_TLS|ERR_SSL|HOSTNAME_MISMATCH|ERR_OSSL)/;
 const NETWORK_CODE = /^(?:ENOTFOUND|EAI_|ECONN|ETIMEDOUT|EHOST|ENET|EPIPE|UND_ERR_|TimeoutError$)/;
-export const proxyVariables = () => ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"].filter(name => process.env[name]);
+// Windows environment names are case-insensitive: there https_proxy reads HTTPS_PROXY, so name each variable once.
+export const proxyVariables = () => ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"]
+  .filter((name, index, names) => process.env[name] && (process.platform !== "win32" || names.findIndex(other => other.toLowerCase() === name.toLowerCase()) === index));
 
 /** A transport failure, or null when this error is not one. Text never carries a URL. */
 export function networkError(error: unknown): CrabrixError | null {

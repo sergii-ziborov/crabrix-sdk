@@ -67,6 +67,16 @@ route, and that the default and agent-link tool lists are unchanged. Regenerate 
 from the website corpus with
 `node test/support/make-academy-fixture.mjs <site/content/courses.json> <crabrix-courses>`.
 
+`test/learning-link.test.ts` covers learning links: the contract's crypto vectors
+(`test/fixtures/learning-link-vectors.json`, a copy of crabrix-poc
+`docs/ai-learning/learning-link-vectors.json`, checked against Node's own HKDF and AES-GCM), URL
+parsing and non-collision with room agent links, strict snapshot validation, every
+`crabrix_my_*` tool end to end against the fake learn-links API in `test/support/academy-api.ts`
+(the snapshot is an envelope sealed with the vector secret; inbox POSTs are decrypted to check the
+exact message), error mapping, the 10-second cache, `serve-http` routing beside `/mcp/academy`
+and room agent links, the concurrency limit and the kill switch (in process and through the built
+CLI).
+
 `test/learning-state.test.ts` covers the AI Learning State v1 (every field rule, secret
 patterns, the newer-version refusal, each merge rule, and idempotence over 200 seeded random
 pairs), the `.crabrixprogress` reader, the learning-state and backup tools through an

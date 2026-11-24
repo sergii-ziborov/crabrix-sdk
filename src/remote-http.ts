@@ -3,9 +3,9 @@ import { Readable } from "node:stream";
 import { createRemoteHandler } from "./remote.js";
 
 // Node's HTTP server in front of the Web-standard handler. The URL holds the agent
-// capability, so requests are never logged.
+// capability (or a learning link's secret), so requests are never logged.
 export type ServeHTTPOptions = { port: number; host: string; relay?: string; origin?: string; academyOrigin?: string;
-  /** false: /mcp/academy answers 503 (also CRABRIX_ACADEMY_MCP=off). Agent links are unaffected. */
+  /** false: /mcp/academy and learning links (/mcp/learn/…) answer 503 (also CRABRIX_ACADEMY_MCP=off). Agent links are unaffected. */
   academy?: boolean };
 
 /** `crabrix serve-http` arguments: value flags in pairs, plus --no-academy. null for an unknown flag. */
@@ -43,8 +43,8 @@ export async function serveHTTP(options: ServeHTTPOptions) {
   });
   server.requestTimeout = 0;
   await new Promise<void>(resolve => server.listen(options.port, options.host, resolve));
-  process.stderr.write(`Crabrix remote MCP on ${options.host}:${options.port}. Agent links are not logged.\n`);
-  if (remote.academy === "paused") process.stderr.write("Crabrix Academy MCP (/mcp/academy) is paused: it answers 503. Agent links work as usual.\n");
+  process.stderr.write(`Crabrix remote MCP on ${options.host}:${options.port}. Agent links and learning links are not logged.\n`);
+  if (remote.academy === "paused") process.stderr.write("Crabrix Academy MCP (/mcp/academy, and learning links under /mcp/learn/) is paused: it answers 503. Agent links work as usual.\n");
   const close = () => { remote.close(); server.closeAllConnections(); server.close(); };
   process.once("SIGINT", close); process.once("SIGTERM", close);
   return { server, close };

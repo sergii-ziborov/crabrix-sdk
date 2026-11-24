@@ -55,7 +55,7 @@ appear below.*
 ```sh
 npm install crabrix
 # or start an MCP server without a global install
-npx -y crabrix@0.6.0
+npx -y crabrix@0.7.0
 ```
 
 Node.js 22+. ESM, CommonJS and TypeScript declarations are included. The released
@@ -124,7 +124,7 @@ computer and joins it as a named participant. It can also create a room itself w
 | Your client | Install once | Do not also |
 | --- | --- | --- |
 | Claude Code | The [plugin](#claude-code-plugin). It registers the server and adds a handoff skill. | Run `claude mcp add` or a global npm install. |
-| Codex | `codex mcp add crabrix -- npx -y crabrix@0.6.0` | Add a second Crabrix entry. |
+| Codex | `codex mcp add crabrix -- npx -y crabrix@0.7.0` | Add a second Crabrix entry. |
 | Cursor | The [JSON config](#any-client-with-local-stdio-mcp) in `~/.cursor/mcp.json`. | Add a second Crabrix entry. |
 | Another client with local stdio MCP | The same JSON config, using Node.js 22+. | Add the plugin as well. |
 | Your own application | The JavaScript, Rust or Go library. | Run a separate MCP server for it. |
@@ -149,7 +149,7 @@ nothing and cannot run code, and the session ends when the agent disconnects, af
 idle minutes or with the room. The Crabrix app gives only local agent links, which this
 path refuses. To keep the key off every server, use Way 1.
 
-Check a setup with `crabrix doctor`, or `npx -y crabrix@0.6.0 doctor`. It reports the
+Check a setup with `crabrix doctor`, or `npx -y crabrix@0.7.0 doctor`. It reports the
 version, Node, DNS, TLS, relay reachability and proxy variables. It opens no room,
 reads no source and changes no setting; add `--json` for a machine-readable report.
 
@@ -164,7 +164,7 @@ its single registration with the config below, and remove a global copy with
 /plugin install crabrix@crabrix
 ```
 
-The plugin starts `npx -y crabrix@0.6.0` and adds a `crabrix-handoff` skill for sharing,
+The plugin starts `npx -y crabrix@0.7.0` and adds a `crabrix-handoff` skill for sharing,
 reviewing and running Rust. It needs Node.js 22+. Outside a session, use
 `claude plugin marketplace add` and `claude plugin install` with the same arguments.
 
@@ -173,13 +173,13 @@ reviewing and running Rust. It needs Node.js 22+. Outside a session, use
 ```json
 {
   "mcpServers": {
-    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.6.0"] }
+    "crabrix": { "command": "npx", "args": ["-y", "crabrix@0.7.0"] }
   }
 }
 ```
 
 In Claude Code without the plugin, the equivalent is
-`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.6.0`.
+`claude mcp add --transport stdio crabrix -- npx -y crabrix@0.7.0`.
 
 Ask your assistant to create a Playground, then open its complete private link.
 The MCP server exposes eighteen tools: `crabrix_create`, `crabrix_connect`, `crabrix_status`, `crabrix_snapshot`,
@@ -191,8 +191,9 @@ The MCP server exposes eighteen tools: `crabrix_create`, `crabrix_connect`, `cra
 Stdio stdout contains only MCP messages; help/version output is explicitly
 requested. `crabrix serve-http [--port 8090] [--host 127.0.0.1]` runs the remote MCP
 behind agent links, as crabrix.com does, for use behind your own TLS proxy. It also serves
-the read-only Academy MCP at `/mcp/academy`; `--no-academy` or `CRABRIX_ACADEMY_MCP=off`
-pauses only that route (HTTP 503 with a JSON-RPC error), and agent links keep working.
+the read-only Academy MCP at `/mcp/academy` and [learning links](#learning-links) at
+`/mcp/learn/<linkId>/<secret>`; `--no-academy` or `CRABRIX_ACADEMY_MCP=off` pauses only those
+routes (HTTP 503 with a JSON-RPC error), and agent links keep working.
 
 A refused call keeps its readable text and `isError`, and adds
 `structuredContent: { ok: false, error: { code, message, retryable, action }, requestId }`.
@@ -288,6 +289,38 @@ skipped and named.
 Without `learningState` they behave as before. Library use: `makeAcademyServer(options, { localFiles: true })`
 adds the backup tool to a server you run over stdio yourself.
 
+### Learning links
+
+A learner who wants their agent to see their real progress turns on **Learn → Learn with AI →
+Connect my progress** in the Crabrix app. The app creates a personal, revocable connector URL,
+`https://crabrix.com/mcp/learn/<linkId>/<secret>`, to add instead of the public `/mcp/academy`.
+Nothing is shared until the learner connects, and Disconnect deletes everything on the server.
+The server behind that URL has every remote Academy tool plus five more:
+
+| Tool | What it does |
+|---|---|
+| `crabrix_my_progress` | Read-only. The app's record: completed and credited lessons per course, the current and recent lessons, the weakest quiz topics, the tutor plan (path, goal, concepts, assigned lessons and whether each is done) and `capturedAt`. |
+| `crabrix_my_lesson` | Read-only. One lesson (`courseId`, `lessonId`): completed, credited by a bridge lesson (`via`), quiz attempts and correct answers, current or recent, assigned. |
+| `crabrix_my_next` | Read-only. `crabrix_academy_next` with the app's record as the learning state; `pathId` defaults to the tutor plan's path. Also lists open assignments. |
+| `crabrix_assign_lessons` | `lessons` (1–5 `{ courseId, lessonId, reason? }`) and `note?`. Every lesson must exist in the Academy. Sent to the app, which shows it under "From your AI tutor". |
+| `crabrix_set_focus` | `pathId?` (an Academy learning path), `goal?`, `concepts?` (up to 10), `note?`; at least one. |
+
+Progress is the app's official record and stays read-only: no tool can complete a lesson or
+change an answer, and assigning a lesson marks nothing. Tutor messages are built on the server
+from validated input: lessons and paths are checked against the Academy, text becomes one line
+of plain text trimmed to the limits (reason 200, goal 300, concept 80, note 500 characters), text
+that looks like a link with a key or a token is refused, and a message larger than the 8 KB inbox
+envelope is refused before it is sent. The app validates every field again and shows them as
+plain text.
+
+The secret is in the path, as with a remote agent link. `serve-http` derives the keys from it
+(HKDF-SHA256), reads the encrypted snapshot from the website with the link's read token, decrypts
+it in memory, validates it strictly and keeps it for at most 10 seconds; it writes nothing to disk
+and logs nothing. The website stores only ciphertext and token hashes. A revoked or expired link
+answers `LEARN_LINK_NOT_FOUND` ("Ask the learner to connect again in the Crabrix app"), any other
+failure `LEARN_LINK_UNAVAILABLE`. The website API is called at the Academy origin
+(`--academy-origin` or `CRABRIX_ACADEMY_ORIGIN`, default `https://crabrix.com`).
+
 ## Run and Debug
 
 The relay **never** compiles or executes code. Open the room in the web Playground
@@ -334,14 +367,14 @@ certify every browser. A room link alone never grants execution permission.*
 All three language APIs use the same local protocol core and require Node.js 22+.
 Rust and Go embed that exact bridge; neither needs a global npm installation.
 The Rust crate is published as [`crabrix` on crates.io](https://crates.io/crates/crabrix);
-[API documentation](https://docs.rs/crabrix/0.6.0/crabrix/) describes its typed interface.
+[API documentation](https://docs.rs/crabrix/0.7.0/crabrix/) describes its typed interface.
 Their SDKs provide source, selection, handoff and the same explicitly permitted
 runtime operations through bounded stdio, rather than separate crypto protocols.
 
 ```sh
 # Rust library / optional MCP executable
-cargo add crabrix@0.6.0
-cargo install crabrix --version 0.6.0 --locked
+cargo add crabrix@0.7.0
+cargo install crabrix --version 0.7.0 --locked
 
 # Go library / optional MCP executable
 go get github.com/sergii-ziborov/crabrix-sdk/go/crabrix
