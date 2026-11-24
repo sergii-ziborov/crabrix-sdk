@@ -33750,7 +33750,7 @@ function causeCodes(error2) {
 }
 var TLS_CODE = /^(?:CERT_|UNABLE_TO_|DEPTH_ZERO|SELF_SIGNED|ERR_TLS|ERR_SSL|HOSTNAME_MISMATCH|ERR_OSSL)/;
 var NETWORK_CODE = /^(?:ENOTFOUND|EAI_|ECONN|ETIMEDOUT|EHOST|ENET|EPIPE|UND_ERR_|TimeoutError$)/;
-var proxyVariables = () => ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"].filter((name) => process.env[name]);
+var proxyVariables = () => ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"].filter((name, index, names) => process.env[name] && (process.platform !== "win32" || names.findIndex((other) => other.toLowerCase() === name.toLowerCase()) === index));
 function networkError(error2) {
   const { codes, text } = causeCodes(error2);
   if (codes.some((code) => TLS_CODE.test(code)) || /certificate|tls handshake/i.test(text)) return new CrabrixError("TLS_ERROR", "The TLS connection to the Crabrix relay could not be verified. Run `crabrix doctor` to inspect this environment; do not disable certificate checks.");

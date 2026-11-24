@@ -25,6 +25,8 @@ server and every existing tool behave as before.
   strictly (format, schema version 1, limits, id patterns; unknown fields are never read) and
   kept in memory for at most 10 seconds per link. Website paths end with `/`; the read token is the
   only credential sent.
+- `crabrix doctor` on Windows names each proxy variable once (environment names there are
+  case-insensitive, so `https_proxy` used to repeat `HTTPS_PROXY`).
 - New error codes: `LEARN_LINK_NOT_FOUND` (revoked or expired: "Ask the learner to connect again in
   the Crabrix app") and `LEARN_LINK_UNAVAILABLE`.
 - The teaching-contract text gains one sentence: with the `crabrix_my_*` tools, start from

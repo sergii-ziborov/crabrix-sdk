@@ -96,7 +96,9 @@ function causeCodes(error: unknown): { codes: string[]; text: string } {
 }
 const TLS_CODE = /^(?:CERT_|UNABLE_TO_|DEPTH_ZERO|SELF_SIGNED|ERR_TLS|ERR_SSL|HOSTNAME_MISMATCH|ERR_OSSL)/;
 const NETWORK_CODE = /^(?:ENOTFOUND|EAI_|ECONN|ETIMEDOUT|EHOST|ENET|EPIPE|UND_ERR_|TimeoutError$)/;
-export const proxyVariables = () => ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"].filter(name => process.env[name]);
+// Windows environment names are case-insensitive: there https_proxy reads HTTPS_PROXY, so name each variable once.
+export const proxyVariables = () => ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"]
+  .filter((name, index, names) => process.env[name] && (process.platform !== "win32" || names.findIndex(other => other.toLowerCase() === name.toLowerCase()) === index));
 
 /** A transport failure, or null when this error is not one. Text never carries a URL. */
 export function networkError(error: unknown): CrabrixError | null {
