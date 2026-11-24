@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — learning links
+## 0.7.0 — learning links
 
 Learning links: the learner's agent reads their real progress from the Crabrix app and suggests
 lessons there. Everything is additive: `/mcp/academy`, room agent links, the default `crabrix`

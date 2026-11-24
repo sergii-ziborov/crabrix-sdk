@@ -1,6 +1,6 @@
 {
   "name": "crabrix",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Learn Rust with Crabrix Academy through your agent, and share end-to-end encrypted Rust Playgrounds: agent links, live shared editing, and Run/Debug on your device only when you allow it.",
   "author": {
     "name": "Sergii Ziborov",

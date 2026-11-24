@@ -34590,7 +34590,7 @@ var PlaygroundRoom = class {
 };
 
 // src/version.ts
-var SDK_VERSION = "0.6.0";
+var SDK_VERSION = "0.7.0";
 var SERVER_NAME = "crabrix";
 
 // src/server.ts
@@ -36318,7 +36318,7 @@ async function runDoctor(options = {}) {
   checks.push({ name: "node", status: supported ? "ok" : "failed", detail: supported ? `Node ${process.version}.` : `Node ${process.version} is too old; Crabrix needs Node 22 or newer.` });
   const missing = ["fetch", "AbortSignal", "TextDecoder"].filter((name) => !(name in globalThis)).concat(globalThis.crypto?.subtle ? [] : ["crypto.subtle"]);
   checks.push({ name: "node-api", status: missing.length ? "failed" : "ok", detail: missing.length ? `Missing: ${missing.join(", ")}.` : "fetch and WebCrypto are available." });
-  const bundled = true ? "0.6.0" : void 0;
+  const bundled = true ? "0.7.0" : void 0;
   checks.push(bundled === void 0 ? { name: "release", status: "skipped", detail: "Running from source; no release manifest is bundled." } : bundled === SDK_VERSION ? { name: "release", status: "ok", detail: `Bundle and release manifest agree on ${SDK_VERSION}.` } : { name: "release", status: "failed", detail: `Bundle is ${SDK_VERSION}, but its release manifest says ${bundled}.` });
   const configured = proxyVariables(), envProxyEnabled = process.env.NODE_USE_ENV_PROXY === "1", proxySupport = envProxySupported();
   if (!configured.length) checks.push({ name: "proxy", status: "ok", detail: "No proxy variables are set." });
