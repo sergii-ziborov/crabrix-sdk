@@ -1,0 +1,41 @@
+{
+ "version": "0.7.0",
+ "date": "2026-11-24",
+ "jsTests": 132,
+ "preexistingTestsUnchanged": 118,
+ "rustUnitTests": 4,
+ "rustDoctests": 1,
+ "goTests": "passed",
+ "ci": "Verify SDKs green on ubuntu-latest, macos-latest and windows-latest (PR #2); windows MCP-02 fixed (doctor named https_proxy twice)",
+ "defaultServerTools": 18,
+ "academyTools": {
+  "local": 12,
+  "remote": 11
+ },
+ "learningLinkTools": {
+  "remote": 16,
+  "new": [
+   "crabrix_my_progress",
+   "crabrix_my_lesson",
+   "crabrix_my_next",
+   "crabrix_assign_lessons",
+   "crabrix_set_focus"
+  ]
+ },
+ "cryptoVectors": "learning-link-vectors.json reproduced (HKDF keys, tokens, token hashes, AES-256-GCM envelope)",
+ "npmTarballSHA256": "5ca10907d13c3ed6415eb0c072fd45e4a42532fdb3ef8bc470ed37ab9e7a0a1e",
+ "npm": "crabrix@0.7.0 published 2026-11-24, dist-tag latest; registry tarball has the same SHA-256",
+ "cratesIo": "crabrix 0.7.0 published",
+ "goProxy": "github.com/sergii-ziborov/crabrix-sdk/go/crabrix v0.7.0 resolved through proxy.golang.org",
+ "mcpRegistry": "io.github.sergii-ziborov/crabrix 0.7.0 published",
+ "githubRelease": "https://github.com/sergii-ziborov/crabrix-sdk/releases/tag/v0.7.0",
+ "packedTarballSmoke": "installed from npm: --version 0.7.0, default server 18 tools, crabrix academy 12 tools",
+ "production": {
+  "mcp": "https://crabrix.com/mcp/learn/<linkId>/<secret> served by serve-http from this source (image sha256:59f26477…)",
+  "endToEnd": "22/22 against https://crabrix.com: create link, encrypted snapshot, initialize (16 tools), my_progress, my_lesson, my_next, unknown lesson refused, assign_lessons and set_focus reach the inbox and decrypt, acknowledgement, wrong secret gets no data, disconnect gives LEARN_LINK_NOT_FOUND",
+  "unchanged": "/mcp/academy answers 11 tools without crabrix_my_*; room agent link paths answer as before"
+ },
+ "notRunForThisRelease": [
+  "the Crabrix iOS app side against production (ships in Crabrix 1.2.0)"
+ ]
+}
