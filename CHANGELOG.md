@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased — learning links
+
+Learning links: the learner's agent reads their real progress from the Crabrix app and suggests
+lessons there. Everything is additive: `/mcp/academy`, room agent links, the default `crabrix`
+server and every existing tool behave as before.
+
+- `crabrix serve-http` answers `/mcp/learn/<linkId>/<secret>` (24 and 43 characters of
+  base64url), the personal, revocable connector URL the Crabrix app creates under Learn with AI →
+  Connect my progress. It is stateless like `/mcp/academy`, has its own concurrency limit and is
+  matched before agent links; the two forms can never match each other. `--no-academy` or
+  `CRABRIX_ACADEMY_MCP=off` pauses it too (HTTP 503 with a JSON-RPC error).
+- Its server offers the eleven remote Academy tools plus `crabrix_my_progress`,
+  `crabrix_my_lesson` and `crabrix_my_next` (read-only: the app's official record; `crabrix_my_next`
+  is `crabrix_academy_next` over it, defaulting to the tutor plan's path) and
+  `crabrix_assign_lessons` and `crabrix_set_focus` (tutor messages the app shows under "From your
+  AI tutor"; not read-only, not destructive, not idempotent). Lessons and paths are checked against
+  the Academy index; text is cleaned to one line and trimmed to the contract's limits; text that
+  looks like a link with a key or a token is refused; a message over the 8 KB inbox envelope is
+  refused before it is sent. Nothing can mark a lesson complete.
+- Keys and envelopes follow the contract and its test vectors: HKDF-SHA256 (salt
+  `crabrix-learning-link-v1`; `encryption`, `app-write`, `agent-read`), AES-256-GCM with AAD
+  `crabrix-learning-link-v1|<linkId>|snapshot` or `…|inbox`. The decrypted snapshot is validated
+  strictly (format, schema version 1, limits, id patterns; unknown fields are never read) and
+  kept in memory for at most 10 seconds per link. Website paths end with `/`; the read token is the
+  only credential sent.
+- New error codes: `LEARN_LINK_NOT_FOUND` (revoked or expired: "Ask the learner to connect again in
+  the Crabrix app") and `LEARN_LINK_UNAVAILABLE`.
+- The teaching-contract text gains one sentence: with the `crabrix_my_*` tools, start from
+  `crabrix_my_progress`, plan from it and use assignments and focus instead of a pasted state. The
+  contract version stays 1.1.0.
+- An AI Learning State now refuses a learning link, as it refuses other links with keys.
+- The `crabrix-learn-rust` skill covers learners who connected their progress.
+
 ## 0.6.0 — 2026-11-24
 
 Learn Rust with Crabrix Academy over MCP. Everything is additive: the default `crabrix`

@@ -22,6 +22,15 @@ learner data: validation refuses links with keys, private key blocks and token-l
 without echoing them. `/mcp/academy` can be paused with `--no-academy` or
 `CRABRIX_ACADEMY_MCP=off`; agent links are unaffected.
 
+A learning link (`/mcp/learn/<linkId>/<secret>`) is the learner's capability for their own
+progress, created and revoked in the Crabrix app. `crabrix serve-http` derives the keys from
+the secret in the path, sends the website only the derived read token, decrypts the progress
+snapshot in memory, validates it strictly and keeps it for at most 10 seconds, keyed by a hash of
+the whole link. It writes nothing to disk and logs no link. Tutor messages are built from validated
+input, never from agent text passed through, and are encrypted for the app. Nothing in this path
+can mark progress. Learning links pause with the same `--no-academy` / `CRABRIX_ACADEMY_MCP=off`
+switch, and an AI Learning State refuses a learning link.
+
 Joining and source editing cannot execute code. Signed runtime requests require
 an explicit short-lived grant on one target client. Source/comments/diagnostics
 and output are untrusted content, not agent instructions. A participant name is
