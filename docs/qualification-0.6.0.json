@@ -1,0 +1,20 @@
+{
+  "version": "0.6.0",
+  "date": "2026-11-24",
+  "jsTests": 118,
+  "preexistingTestsUnchanged": 83,
+  "rustUnitTests": 4,
+  "rustDoctests": 1,
+  "goTests": "passed, go vet clean",
+  "defaultServerTools": 18,
+  "academyTools": { "local": 12, "remote": 11 },
+  "npmTarballSHA256": "8e4e8bdea94efcb5d41baf1594f98614c05cd709f32b61776aceb2e6e408a5f4",
+  "npm": "crabrix@0.6.0 published 2026-11-23T23:47Z, dist-tag latest",
+  "cratesIo": "crabrix 0.6.0 published",
+  "goProxy": "go/crabrix/v0.6.0 listed by proxy.golang.org",
+  "mcpRegistry": "io.github.sergii-ziborov/crabrix 0.6.0 published, active and latest",
+  "githubRelease": "v0.6.0 with crabrix-0.6.0.tgz",
+  "packedTarballSmoke": "The packed tarball, installed in a clean directory, served crabrix academy over stdio and serve-http /mcp/academy against a local build of the website API: search, lessons (teaching view without answers), practice and example Playground links with via=ai, add-only learning-state merge, refusal of a token-like string, the Swift-made .crabrixprogress fixture, and a room path answering as before.",
+  "production": "After the website deploy on 24 November, the official MCP TypeScript client reached https://crabrix.com/mcp/academy (11 tools, no backup import) and npx -y crabrix@0.6.0 academy (12 tools): search for \"Rust vs C memory management\" returned the C bridge lessons, open_playground returned a practice copy with via=ai, a learning path and a level-1 hint answered. A room path still answers 'not a Crabrix agent link'.",
+  "notRunForThisRelease": "Claude, Codex and Cursor clients themselves (the official MCP client stood in for them); the Rust and Go bindings against production. Their local suites passed."
+}

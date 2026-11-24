@@ -11,7 +11,7 @@ an optional companion for iPhone/iPad and offline Rust projects.
 
 See the [practical two-agent walkthrough](https://crabrix.com/blog/crabrix-mcp-two-agents-local-rust-workflows/)
 for development, interviews and teaching, including actual local Run/Debug and
-permission checks. The [0.5.0 release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.5.0.json)
+permission checks. The [0.6.0 release qualification](https://github.com/sergii-ziborov/crabrix-sdk/blob/main/docs/qualification-0.6.0.json)
 states what was tested against production.
 
 <img src="https://raw.githubusercontent.com/sergii-ziborov/crabrix-sdk/main/assets/agents-workspace.webp" alt="Orange Crabrix crab between an implementation agent, a review agent and a person at one shared workspace" width="760">
