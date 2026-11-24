@@ -8,7 +8,7 @@ export type ErrorCode =
   | "NETWORK_UNREACHABLE" | "TLS_ERROR" | "PROXY_ERROR" | "JOIN_TIMEOUT" | "RELAY_CONFLICT" | "RELAY_UNAVAILABLE"
   | "RUNTIME_GRANT_REQUIRED" | "RUNTIME_UNAVAILABLE" | "OUTCOME_UNKNOWN" | "OPERATION_FAILED"
   | "CLIENT_UPDATE_REQUIRED" | "UNSUPPORTED_ROOM_FORMAT" | "PLAN_CHANGED" | "OPERATION_ID_CONFLICT" | "RECOVERY_FULL" | "PROJECT_BLOCKED"
-  | "ACADEMY_NOT_FOUND" | "ACADEMY_UNAVAILABLE";
+  | "ACADEMY_NOT_FOUND" | "ACADEMY_UNAVAILABLE" | "LEARN_LINK_NOT_FOUND" | "LEARN_LINK_UNAVAILABLE";
 
 const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   INVALID_LINK: { retryable: false, action: "check_link" },
@@ -42,6 +42,8 @@ const GUIDANCE: Record<ErrorCode, { retryable: boolean; action: string }> = {
   PROJECT_BLOCKED: { retryable: false, action: "fix_project" },
   ACADEMY_NOT_FOUND: { retryable: false, action: "check_ids" },
   ACADEMY_UNAVAILABLE: { retryable: true, action: "wait_and_retry" },
+  LEARN_LINK_NOT_FOUND: { retryable: false, action: "reconnect_learning_link" },
+  LEARN_LINK_UNAVAILABLE: { retryable: true, action: "wait_and_retry" },
 };
 
 export class CrabrixError extends Error {

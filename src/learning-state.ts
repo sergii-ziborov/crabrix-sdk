@@ -64,6 +64,7 @@ const KEYS = {
 const SECRETS: [RegExp, string][] = [
   [/\/playground\/room\/[A-Za-z0-9_-]{24}\/?#\S*\bkey=/, "a Crabrix room link with its key"],
   [/\/mcp\/[A-Za-z0-9_-]{24}\/[A-Za-z0-9_-]{43}(?:\/[A-Za-z0-9_-]{43}|\/?#key=)/, "a Crabrix agent link with its key"],
+  [/\/mcp\/learn\/[A-Za-z0-9_-]{24}\/[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, "a Crabrix learning link"],
   [/[#&?]key=[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, "a Crabrix room key"],
   [/-----BEGIN [A-Z0-9 ]{2,60}-----/, "a private key or certificate block"],
   [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/, "a GitHub token"],
@@ -76,6 +77,16 @@ const SECRETS: [RegExp, string][] = [
   [/\bAIza[0-9A-Za-z_-]{35}/, "a cloud API key"],
   [/\bnpm_[A-Za-z0-9]{36}\b/, "an npm token"],
 ];
+
+/** The schema's Academy id pattern: lowercase letters, digits, "." and "-", starting with a letter or digit, at most 160. */
+export const isAcademyId = (value: unknown): value is string => typeof value === "string" && ID.test(value);
+/** A learning path id: lowercase letters, digits and "-", at most 128. */
+export const isLearningPathId = (value: unknown): value is string => typeof value === "string" && PATH_ID.test(value);
+/** What kind of capability or credential a text seems to carry, or null. The text itself is never echoed. */
+export function secretKind(text: string): string | null {
+  for (const [pattern, what] of SECRETS) if (pattern.test(text)) return what;
+  return null;
+}
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const length = (text: string) => [...text].length;

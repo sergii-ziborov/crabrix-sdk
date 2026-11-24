@@ -40,6 +40,6 @@
   "environment": {
     "node": ">=22"
   },
-  "bridgeSHA256": "73a75a38ac6d5ff69fc2bf5befed212ef832beb10a1b19eb1391b6cca1dba617",
+  "bridgeSHA256": "2676715fa5d4e268322c9fc53a84ffba4b51dc302542dd74457fc5331a48e112",
   "publication": "Generated from package.json at build time. It states what this source would release; registry availability needs its own receipt."
 }

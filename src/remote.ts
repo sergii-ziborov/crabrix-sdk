@@ -2,10 +2,14 @@
 // The link is the server URL, so a client with only remote MCP works in the room.
 // This process holds the room key while a session lasts and decrypts what the agent reads.
 // Nothing is written to disk or logged; a session ends on DELETE, when idle, or when the room expires.
+// Two stateless routes sit beside it: the public Academy MCP (/mcp/academy) and learning links
+// (/mcp/learn/<linkId>/<secret>), which read the learner's own progress from the Crabrix app.
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/server";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { makeAcademyServer, makeServer } from "./server.js";
 import { AcademyClient } from "./academy.js";
+import { LearningLinkClient, parseLearningLinkPath, type LearningLink, type LearningLinkClientOptions } from "./learning-link.js";
+import { makeLearningLinkServer } from "./learning-link-tools.js";
 import { PlaygroundRoom, agentLinkURL, parseAgentLink } from "./room.js";
 import { toCrabrixError } from "./errors.js";
 
@@ -20,7 +24,11 @@ export type RemoteOptions = {
   academyOrigin?: string;
   /** Concurrent /mcp/academy requests, kept apart from room sessions. */
   maxAcademyRequests?: number;
-  /** false pauses /mcp/academy (HTTP 503); CRABRIX_ACADEMY_MCP=off does the same. Agent links are unaffected. */
+  /** Concurrent /mcp/learn/… requests, kept apart from room sessions and /mcp/academy. */
+  maxLearningLinkRequests?: number;
+  /** The learn-links website client (timeouts, the snapshot cache of at most 10 s); its origin is the Academy origin. */
+  learningLinks?: Omit<LearningLinkClientOptions, "origin">;
+  /** false pauses /mcp/academy and learning links (HTTP 503); CRABRIX_ACADEMY_MCP=off does the same. Agent links are unaffected. */
   academy?: boolean;
 };
 type Session = { transport: WebStandardStreamableHTTPServerTransport; room: PlaygroundRoom; link: Buffer; used: number; expiresAt: number };
@@ -28,7 +36,9 @@ type Session = { transport: WebStandardStreamableHTTPServerTransport; room: Play
 const digest = (value: string) => createHash("sha256").update(value).digest();
 const jsonError = (status: number, message: string) => Response.json({ jsonrpc: "2.0", error: { code: -32000, message }, id: null }, { status, headers: { "Cache-Control": "no-store" } });
 const ACADEMY_PAUSED = "Crabrix Academy MCP is paused. Lessons stay available at https://crabrix.com/learn/ and in the Crabrix app. Crabrix agent links are not affected.";
-/** The kill switch for the public Academy MCP: `serve-http --no-academy` or CRABRIX_ACADEMY_MCP=off. */
+const LEARN_PAUSED = "Crabrix learning links are paused. The learner's progress stays in the Crabrix app, and lessons stay available at https://crabrix.com/learn/. Crabrix agent links are not affected.";
+const NOT_LEARNING_LINK = "This is not a complete Crabrix learning link. Copy it again from Learn with AI → Connect my progress in the Crabrix app.";
+/** The kill switch for the public Academy MCP and learning links: `serve-http --no-academy` or CRABRIX_ACADEMY_MCP=off. */
 const academyMcpPaused = (option?: boolean) => option === false || (process.env.CRABRIX_ACADEMY_MCP ?? "").trim().toLowerCase() === "off";
 
 export function createRemoteHandler(options: RemoteOptions = {}) {
@@ -40,23 +50,32 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
   // keeps lesson traffic from taking capacity that agent-link sessions need.
   const academy = new AcademyClient({ origin: options.academyOrigin ?? process.env.CRABRIX_ACADEMY_ORIGIN ?? origin });
   const maxAcademy = options.maxAcademyRequests ?? 16, academyPaused = academyMcpPaused(options.academy);
-  let academyInFlight = 0;
-  async function handleAcademy(request: Request): Promise<Response> {
-    if (request.method !== "POST") return Response.json({ jsonrpc: "2.0", error: { code: -32000, message: "Crabrix Academy MCP is stateless: send JSON-RPC requests with POST." }, id: null }, { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } });
-    if (academyInFlight >= maxAcademy) return jsonError(503, "Crabrix Academy MCP is busy. Retry shortly.");
-    academyInFlight++;
-    try {
-      const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-      const server = makeAcademyServer(academy);
-      await server.connect(transport);
-      const response = await transport.handleRequest(request);
-      const body = await response.text();
-      void server.close().catch(() => {});
-      return new Response(body, { status: response.status, headers: response.headers });
-    } catch {
-      return jsonError(500, "Crabrix Academy MCP could not handle this request.");
-    } finally { academyInFlight--; }
-  }
+  // Learning links: the same switch, their own limit, and one website client so the snapshot cache spans requests.
+  const learning = new LearningLinkClient({ ...options.learningLinks, origin: academy.origin });
+  const maxLearning = options.maxLearningLinkRequests ?? 16;
+  /** One JSON-RPC request on a fresh server: no session, no state kept after the answer. */
+  const stateless = (name: string, max: number) => {
+    let inFlight = 0;
+    return async (request: Request, server: () => ReturnType<typeof makeAcademyServer>): Promise<Response> => {
+      if (request.method !== "POST") return Response.json({ jsonrpc: "2.0", error: { code: -32000, message: `${name} is stateless: send JSON-RPC requests with POST.` }, id: null }, { status: 405, headers: { Allow: "POST", "Cache-Control": "no-store" } });
+      if (inFlight >= max) return jsonError(503, `${name} is busy. Retry shortly.`);
+      inFlight++;
+      try {
+        const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+        const instance = server();
+        await instance.connect(transport);
+        const response = await transport.handleRequest(request);
+        const body = await response.text();
+        void instance.close().catch(() => {});
+        return new Response(body, { status: response.status, headers: response.headers });
+      } catch {
+        return jsonError(500, `${name} could not handle this request.`);
+      } finally { inFlight--; }
+    };
+  };
+  const academyRequest = stateless("Crabrix Academy MCP", maxAcademy), learningRequest = stateless("Crabrix learning link MCP", maxLearning);
+  const handleAcademy = (request: Request) => academyRequest(request, () => makeAcademyServer(academy));
+  const handleLearningLink = (request: Request, link: LearningLink) => learningRequest(request, () => makeLearningLinkServer(academy, learning, link));
 
   const end = (id: string) => {
     const session = sessions.get(id);
@@ -74,6 +93,12 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (/^\/mcp\/academy\/?$/.test(url.pathname) && !url.search) return academyPaused ? jsonError(503, ACADEMY_PAUSED) : handleAcademy(request);
+    // Before agent links: "learn" is never a 24-character room id, so neither path can match the other.
+    if (/^\/mcp\/learn(?:\/|$)/.test(url.pathname)) {
+      const link = url.search ? null : parseLearningLinkPath(url.pathname);
+      if (!link) return jsonError(404, NOT_LEARNING_LINK);
+      return academyPaused ? jsonError(503, LEARN_PAUSED) : handleLearningLink(request, link);
+    }
     // The path is the capability. It is compared as a hash and never echoed.
     let parsed;
     try { parsed = parseAgentLink(origin + url.pathname, origin); } catch { parsed = null; }
@@ -121,6 +146,8 @@ export function createRemoteHandler(options: RemoteOptions = {}) {
     get sessions() { return sessions.size; },
     /** "paused" when the kill switch is on: /mcp/academy answers 503. */
     get academy(): "on" | "paused" { return academyPaused ? "paused" : "on"; },
+    /** The same switch: "paused" when learning links (/mcp/learn/…) answer 503. */
+    get learningLinks(): "on" | "paused" { return academyPaused ? "paused" : "on"; },
     close() { clearInterval(sweep); for (const id of [...sessions.keys()]) end(id); },
   };
 }

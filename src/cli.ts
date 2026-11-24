@@ -12,7 +12,7 @@ if (args.length === 1 && args[0] === "--help") {
   const color = process.stdout.isTTY ? { crab: "\x1b[38;2;255;95;65m", cyan: "\x1b[38;2;77;216;235m", off: "\x1b[0m" } : { crab: "", cyan: "", off: "" };
   process.stdout.write(`${color.crab}🦀 Crabrix SDK + MCP${color.off} · ${SDK_VERSION}\n${color.cyan}Agents and people. One temporary Rust Playground.${color.off}\n\nRun without arguments as an MCP stdio server.\nSetup: https://crabrix.com/ai/\nNode.js 22 or newer. No account. One-hour rooms by default.\nLive edits and selections. Use a browser or app for signed local Run/Debug after permission. No iPhone is required.
 Diagnostics: crabrix doctor [--json]. It opens no room, reads no source and changes no setting.
-Remote MCP for agent links: crabrix serve-http [--port 8090] [--host 127.0.0.1], behind a TLS proxy. It also serves read-only Crabrix Academy MCP at /mcp/academy; --no-academy or CRABRIX_ACADEMY_MCP=off pauses only that route (503).
+Remote MCP for agent links: crabrix serve-http [--port 8090] [--host 127.0.0.1], behind a TLS proxy. It also serves read-only Crabrix Academy MCP at /mcp/academy and learning links from the Crabrix app at /mcp/learn/…; --no-academy or CRABRIX_ACADEMY_MCP=off pauses only those routes (503).
 Crabrix Academy only (read-only lessons for learning Rust with an agent): crabrix academy. It can also read a .crabrixprogress backup file you name, locally.
 Library: import { Crabrix } from "crabrix";\n`);
 } else if (args.length === 1 && args[0] === "--version") {
